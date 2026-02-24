@@ -1,0 +1,45 @@
+using DonetickCalDav.Cache;
+using DonetickCalDav.CalDav.VTodo;
+
+namespace DonetickCalDav.CalDav.Handlers;
+
+/// <summary>
+/// Handles GET requests for individual .ics (VTODO) resources.
+/// Returns the full iCalendar content with appropriate ETag header.
+/// </summary>
+public sealed class GetHandler
+{
+    private readonly ChoreCache _cache;
+    private readonly ILogger<GetHandler> _logger;
+
+    public GetHandler(ChoreCache cache, ILogger<GetHandler> logger)
+    {
+        _cache = cache;
+        _logger = logger;
+    }
+
+    public async Task HandleAsync(HttpContext context)
+    {
+        var id = PathHelper.ExtractChoreId(context.Request.Path.Value ?? "");
+        if (id == null)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+
+        var cached = _cache.GetChore(id.Value);
+        if (cached == null)
+        {
+            _logger.LogDebug("GET: chore {Id} not found in cache", id.Value);
+            context.Response.StatusCode = 404;
+            return;
+        }
+
+        _logger.LogDebug("GET: serving chore {Id} ({Name})", id.Value, cached.Chore.Name);
+
+        context.Response.StatusCode = 200;
+        context.Response.ContentType = "text/calendar; charset=utf-8";
+        context.Response.Headers["ETag"] = cached.ETag;
+        await context.Response.WriteAsync(VTodoMapper.ToIcsString(cached.Chore));
+    }
+}
