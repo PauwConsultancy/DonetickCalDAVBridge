@@ -24,6 +24,10 @@ ENV CalDav__Username=user
 ENV CalDav__Password=pass
 ENV CalDav__CalendarName=DonetickTasks
 ENV CalDav__CalendarColor=#4A90D9FF
+ENV CalDav__GroupByLabel=false
+ENV CalDav__DefaultCalendarName=Algemeen
+ENV CalDav__AllDayEvents=false
+ENV CalDav__PreserveScheduledTime=false
 ENV CalDav__ListenPort=5232
 
 ENTRYPOINT ["dotnet", "DonetickCalDav.dll"]

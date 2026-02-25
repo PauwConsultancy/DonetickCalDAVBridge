@@ -336,9 +336,26 @@ src/DonetickCalDav/
 
 Planned features and improvements (contributions welcome):
 
+### Done
+
 - [x] **All-day events** — option to emit tasks without a specific time (`CalDav__AllDayEvents=true`), so they appear as all-day items in Calendar.app instead of at a specific hour
 - [x] **Preserve original scheduled time** — option to keep the originally configured due time on recurring tasks (`CalDav__PreserveScheduledTime=true`)
-- [ ] **Unraid template** — create an Unraid Community Applications XML template for easy installation via the Unraid app store
+- [x] **Unraid template** — `unraid-template.xml` for Unraid Community Applications
+
+### Improvements
+
+- [ ] **Conditional GET (If-None-Match)** — return 304 Not Modified when the client's ETag matches, saving bandwidth and speeding up sync
+- [ ] **Smarter cache refresh after writes** — after PUT, only refresh the affected chore instead of fetching the entire list from Donetick
+- [ ] **CancellationToken propagation** — pass `context.RequestAborted` to Donetick API calls so requests are cancelled when clients disconnect
+- [ ] **Status/priority constants** — replace magic numbers (`0`, `1`, `2`, `3`) with named constants or enums for readability
+
+### New features
+
+- [ ] **MOVE support** — handle Apple Reminders drag & drop between lists (when `GroupByLabel=true`). Currently returns 405; may be limited by the Donetick eAPI (no label management)
+- [ ] **JSON health endpoint** — add `/health/json` for monitoring tools (Uptime Kuma, Docker HEALTHCHECK) that expect a simple JSON response instead of HTML
+- [ ] **Startup connectivity check** — warn clearly in logs and on the status page when Donetick is unreachable at startup (currently the cache just stays empty)
+- [ ] **Rate limiting** — basic request throttling per IP or username to protect against misbehaving clients
+- [ ] **CI/CD pipeline** — GitHub Actions workflow to build, test, and publish Docker images to GHCR or Docker Hub
 
 ## License
 

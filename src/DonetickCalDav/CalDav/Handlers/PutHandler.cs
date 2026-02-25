@@ -37,7 +37,8 @@ public sealed class PutHandler
     public async Task HandleAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? "";
-        var icsBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
+        using var reader = new StreamReader(context.Request.Body);
+        var icsBody = await reader.ReadToEndAsync();
 
         _logger.LogDebug("PUT {Path} — body length: {Length}", path, icsBody.Length);
 

@@ -1,0 +1,234 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>donetick-caldav</Name>
+  <Repository>donetick-caldav</Repository>
+  <Registry>https://github.com/your-username/donetick-caldav</Registry>
+  <Branch>
+    <Tag>latest</Tag>
+    <TagDescription>Latest stable release</TagDescription>
+  </Branch>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/your-username/donetick-caldav/issues</Support>
+  <Project>https://github.com/your-username/donetick-caldav</Project>
+  <Overview>
+    CalDAV bridge that exposes Donetick tasks to Apple Calendar, Apple Reminders, Thunderbird, GNOME Calendar, and other CalDAV clients.&#xD;
+    &#xD;
+    Features:&#xD;
+    - Syncs Donetick chores as VTODO items via CalDAV&#xD;
+    - Create, update, complete, and delete tasks from your calendar app&#xD;
+    - Optional: split labels into separate calendar lists (GroupByLabel)&#xD;
+    - Optional: show tasks as all-day items (AllDayEvents)&#xD;
+    - Optional: preserve original scheduled time on recurring tasks&#xD;
+    &#xD;
+    Note: Apple Calendar/Reminders require HTTPS for Basic Auth. Use a reverse proxy (Nginx Proxy Manager, Caddy) or Tailscale to provide TLS termination.
+  </Overview>
+  <Category>Productivity: Tools:</Category>
+  <Icon>https://raw.githubusercontent.com/donetick/frontend/refs/heads/main/public/donetick-logo.webp</Icon>
+  <WebUI>http://[IP]:[PORT:5232]/</WebUI>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <Description>
+    CalDAV bridge for Donetick — sync your tasks to Apple Calendar, Reminders, Thunderbird, and other CalDAV clients.
+  </Description>
+  <Changes>
+    ### 2026-02-25
+    - Initial Unraid template
+  </Changes>
+
+  <!-- ── Port ──────────────────────────────────────────────────────────── -->
+
+  <Config
+    Name="CalDAV Port"
+    Target="5232"
+    Default="5232"
+    Mode="tcp"
+    Description="Port the CalDAV server listens on."
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">5232</Config>
+
+  <!-- ── Donetick connection (required) ────────────────────────────────── -->
+
+  <Config
+    Name="Donetick URL"
+    Target="Donetick__BaseUrl"
+    Default="http://donetick:8080"
+    Description="URL of your Donetick instance. Use the container name if on the same Docker network."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">http://donetick:8080</Config>
+
+  <Config
+    Name="Donetick API Key"
+    Target="Donetick__ApiKey"
+    Default=""
+    Description="External API secret key from Donetick Settings &gt; API. Required."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"></Config>
+
+  <Config
+    Name="Poll Interval (seconds)"
+    Target="Donetick__PollIntervalSeconds"
+    Default="30"
+    Description="How often to poll Donetick for task changes. Minimum: 5 seconds."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">30</Config>
+
+  <!-- ── CalDAV authentication (required) ──────────────────────────────── -->
+
+  <Config
+    Name="CalDAV Username"
+    Target="CalDav__Username"
+    Default="user"
+    Description="Username for CalDAV Basic Auth login. Enter this when adding the account in your calendar app."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="false">user</Config>
+
+  <Config
+    Name="CalDAV Password"
+    Target="CalDav__Password"
+    Default=""
+    Description="Password for CalDAV Basic Auth login. Choose a strong password."
+    Type="Variable"
+    Display="always"
+    Required="true"
+    Mask="true"></Config>
+
+  <!-- ── Calendar display ──────────────────────────────────────────────── -->
+
+  <Config
+    Name="Calendar Name"
+    Target="CalDav__CalendarName"
+    Default="Donetick Tasks"
+    Description="Display name shown in your calendar app for this task list."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">Donetick Tasks</Config>
+
+  <Config
+    Name="Calendar Color"
+    Target="CalDav__CalendarColor"
+    Default="#4A90D9FF"
+    Description="Calendar color in RGBA hex format (e.g. #4A90D9FF for blue)."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">#4A90D9FF</Config>
+
+  <!-- ── Feature flags ─────────────────────────────────────────────────── -->
+
+  <Config
+    Name="Group by Label"
+    Target="CalDav__GroupByLabel"
+    Default="false"
+    Description="When true, creates a separate calendar list per Donetick label. Tasks with zero or multiple labels go to the default list. Useful because Apple Reminders cannot display tags on CalDAV accounts."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">false</Config>
+
+  <Config
+    Name="Default Calendar Name"
+    Target="CalDav__DefaultCalendarName"
+    Default="Algemeen"
+    Description="Display name for the default/catch-all list when Group by Label is enabled. Tasks with zero or multiple labels appear here."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">Algemeen</Config>
+
+  <Config
+    Name="All-Day Events"
+    Target="CalDav__AllDayEvents"
+    Default="false"
+    Description="When true, tasks appear as all-day items (no specific time) in Calendar.app. Reminders shows 'today' instead of 'today at 14:00'."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">false</Config>
+
+  <Config
+    Name="Preserve Scheduled Time"
+    Target="CalDav__PreserveScheduledTime"
+    Default="false"
+    Description="When true, keeps the originally configured time on recurring tasks after completion. Fixes Donetick's behaviour of shifting the time to when you completed the task."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">false</Config>
+
+  <!-- ── TLS / HTTPS (optional) ────────────────────────────────────────── -->
+
+  <Config
+    Name="TLS Certificate Path"
+    Target="CalDav__Tls__CertPath"
+    Default=""
+    Description="Path to a PEM certificate file inside the container (e.g. /certs/cert.pem). Enables HTTPS. Required for Apple Calendar/Reminders."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="TLS Key Path"
+    Target="CalDav__Tls__KeyPath"
+    Default=""
+    Description="Path to a PEM private key file inside the container (e.g. /certs/key.pem). Used together with TLS Certificate Path."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="TLS PFX Path"
+    Target="CalDav__Tls__PfxPath"
+    Default=""
+    Description="Path to a PFX/PKCS12 certificate file (alternative to PEM cert+key). Leave empty if using PEM files."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <Config
+    Name="TLS PFX Password"
+    Target="CalDav__Tls__PfxPassword"
+    Default=""
+    Description="Password for the PFX file, if encrypted. Leave empty if not using PFX or if unencrypted."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="true"></Config>
+
+  <Config
+    Name="Certificates"
+    Target="/certs"
+    Default=""
+    Description="Mount your TLS certificate files here (read-only). Only needed if using built-in HTTPS."
+    Type="Path"
+    Display="advanced"
+    Required="false"
+    Mask="false"></Config>
+
+  <!-- ── Logging ───────────────────────────────────────────────────────── -->
+
+  <Config
+    Name="Log Level"
+    Target="Logging__LogLevel__DonetickCalDav"
+    Default="Information"
+    Description="Log verbosity: Information (default) for normal use, Debug for troubleshooting CalDAV protocol issues."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">Information</Config>
+
+</Container>

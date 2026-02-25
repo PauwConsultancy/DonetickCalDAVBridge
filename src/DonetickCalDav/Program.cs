@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
-const string Version = "0.5.0";
+const string Version = "0.6.0";
 
 var builder = WebApplication.CreateBuilder(args);
 
