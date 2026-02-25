@@ -15,4 +15,18 @@ services:
       - CalDav__CalendarName=Donetick Tasks
       - CalDav__CalendarColor=#4A90D9FF
       - CalDav__ListenPort=5232
+      # -- Optional: HTTPS (required for Apple Calendar/Reminders) --
+      # Tailscale PEM certs:
+      # - CalDav__Tls__CertPath=/certs/your-hostname.ts.net.crt
+      # - CalDav__Tls__KeyPath=/certs/your-hostname.ts.net.key
+      # Or PFX certificate:
+      # - CalDav__Tls__PfxPath=/certs/certificate.pfx
+      # - CalDav__Tls__PfxPassword=optional-password
+    # volumes:
+    #   - /path/to/certs:/certs:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"        # Rotate after 10 MB per log file
+        max-file: "3"          # Keep at most 3 rotated files (30 MB total)
     restart: unless-stopped

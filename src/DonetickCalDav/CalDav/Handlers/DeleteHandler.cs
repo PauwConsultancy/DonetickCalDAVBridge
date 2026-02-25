@@ -10,10 +10,10 @@ namespace DonetickCalDav.CalDav.Handlers;
 public sealed class DeleteHandler
 {
     private readonly ChoreCache _cache;
-    private readonly DonetickApiClient _client;
+    private readonly IDonetickApiClient _client;
     private readonly ILogger<DeleteHandler> _logger;
 
-    public DeleteHandler(ChoreCache cache, DonetickApiClient client, ILogger<DeleteHandler> logger)
+    public DeleteHandler(ChoreCache cache, IDonetickApiClient client, ILogger<DeleteHandler> logger)
     {
         _cache = cache;
         _client = client;
@@ -22,7 +22,7 @@ public sealed class DeleteHandler
 
     public async Task HandleAsync(HttpContext context)
     {
-        var id = PathHelper.ExtractChoreId(context.Request.Path.Value ?? "");
+        var id = PathHelper.ResolveChoreIdFromPath(context.Request.Path.Value ?? "", _cache);
         if (id == null)
         {
             context.Response.StatusCode = 404;

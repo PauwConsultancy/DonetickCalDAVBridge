@@ -10,13 +10,13 @@ namespace DonetickCalDav.Cache;
 /// </summary>
 public sealed class ChoreSyncService : BackgroundService
 {
-    private readonly DonetickApiClient _client;
+    private readonly IDonetickApiClient _client;
     private readonly ChoreCache _cache;
     private readonly IOptions<AppSettings> _settings;
     private readonly ILogger<ChoreSyncService> _logger;
 
     public ChoreSyncService(
-        DonetickApiClient client,
+        IDonetickApiClient client,
         ChoreCache cache,
         IOptions<AppSettings> settings,
         ILogger<ChoreSyncService> logger)

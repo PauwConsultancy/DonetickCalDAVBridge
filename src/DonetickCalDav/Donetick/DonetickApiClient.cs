@@ -9,7 +9,7 @@ namespace DonetickCalDav.Donetick;
 /// Handles all CRUD operations for chores via the /eapi/v1/ endpoints.
 /// Authentication is done via the "secretkey" header, configured on the HttpClient at DI registration.
 /// </summary>
-public sealed class DonetickApiClient
+public sealed class DonetickApiClient : IDonetickApiClient
 {
     private const string ChoreEndpoint = "/eapi/v1/chore";
 

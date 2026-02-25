@@ -4,6 +4,8 @@ using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
 using Ical.Net.Serialization;
 
+using CalendarProperty = Ical.Net.CalendarProperty;
+
 namespace DonetickCalDav.CalDav.VTodo;
 
 /// <summary>
@@ -63,8 +65,12 @@ public static class VTodoMapper
         };
 
         ApplyDueDate(todo, chore);
-        ApplyRecurrence(todo, chore);
+        // Note: we intentionally do NOT emit RRULE. Donetick manages recurrence
+        // server-side (updating NextDueDate on completion). Emitting RRULE would
+        // cause Calendar.app to generate occurrences client-side, conflicting
+        // with the server-managed schedule.
         ApplyCategories(todo, chore);
+        ApplyAppleHashtags(todo, chore);
         ApplyPercentComplete(todo, chore);
 
         return todo;
@@ -79,20 +85,26 @@ public static class VTodoMapper
         todo.DtStart = new CalDateTime(chore.NextDueDate.Value.Date, "UTC");
     }
 
-    private static void ApplyRecurrence(Todo todo, DonetickChore chore)
-    {
-        var rrule = RecurrenceMapper.ToRRule(chore);
-        if (rrule == null) return;
-
-        todo.RecurrenceRules.Add(rrule);
-    }
-
     private static void ApplyCategories(Todo todo, DonetickChore chore)
     {
         if (chore.LabelsV2 is not { Count: > 0 }) return;
 
         foreach (var label in chore.LabelsV2)
             todo.Categories.Add(label.Name);
+    }
+
+    /// <summary>
+    /// Emits X-APPLE-HASHTAGS so Apple Reminders / Calendar can display
+    /// Donetick labels as native #hashtag-style tags. The standard CATEGORIES
+    /// property is also emitted (by <see cref="ApplyCategories"/>) for
+    /// non-Apple clients like Thunderbird and DAVx5.
+    /// </summary>
+    private static void ApplyAppleHashtags(Todo todo, DonetickChore chore)
+    {
+        if (chore.LabelsV2 is not { Count: > 0 }) return;
+
+        var hashtags = string.Join(",", chore.LabelsV2.Select(l => l.Name));
+        todo.Properties.Add(new CalendarProperty("X-APPLE-HASHTAGS", hashtags));
     }
 
     private static void ApplyPercentComplete(Todo todo, DonetickChore chore)

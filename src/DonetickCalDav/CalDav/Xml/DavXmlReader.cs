@@ -61,4 +61,8 @@ public static class DavXmlReader
     /// <summary>Checks if the REPORT body is a calendar-multiget request.</summary>
     public static bool IsCalendarMultiget(XDocument doc) =>
         doc.Root?.Name == DavNamespaces.C + "calendar-multiget";
+
+    /// <summary>Checks if the REPORT body is a DAV sync-collection request.</summary>
+    public static bool IsSyncCollection(XDocument doc) =>
+        doc.Root?.Name == DavNamespaces.D + "sync-collection";
 }

@@ -57,4 +57,29 @@ public sealed class CalDavSettings
     /// <summary>TCP port the CalDAV server listens on.</summary>
     [Range(1, 65535)]
     public int ListenPort { get; set; } = 5232;
+
+    /// <summary>
+    /// Optional TLS settings. When configured, the server listens on HTTPS.
+    /// Required for Apple Calendar/Reminders which refuse Basic Auth over plain HTTP.
+    /// </summary>
+    public TlsSettings? Tls { get; set; }
+}
+
+/// <summary>
+/// Optional TLS/HTTPS configuration for the CalDAV server.
+/// Provide a PFX file or a certificate + key PEM pair.
+/// </summary>
+public sealed class TlsSettings
+{
+    /// <summary>Path to a PFX/PKCS12 certificate file.</summary>
+    public string? PfxPath { get; set; }
+
+    /// <summary>Password for the PFX file (if encrypted).</summary>
+    public string? PfxPassword { get; set; }
+
+    /// <summary>Path to a PEM-encoded certificate file (alternative to PFX).</summary>
+    public string? CertPath { get; set; }
+
+    /// <summary>Path to a PEM-encoded private key file (used with CertPath).</summary>
+    public string? KeyPath { get; set; }
 }

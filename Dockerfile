@@ -22,7 +22,7 @@ ENV Donetick__ApiKey=
 ENV Donetick__PollIntervalSeconds=30
 ENV CalDav__Username=user
 ENV CalDav__Password=pass
-ENV CalDav__CalendarName=Donetick Tasks
+ENV CalDav__CalendarName=DonetickTasks
 ENV CalDav__CalendarColor=#4A90D9FF
 ENV CalDav__ListenPort=5232
 

@@ -1,9 +1,11 @@
 using System.Text.RegularExpressions;
+using DonetickCalDav.Cache;
 
 namespace DonetickCalDav.CalDav.Handlers;
 
 /// <summary>
 /// Utility for extracting Donetick chore IDs from CalDAV resource paths.
+/// Supports both our canonical "donetick-{id}.ics" paths and Apple-generated UUID paths.
 /// </summary>
 public static partial class PathHelper
 {
@@ -20,6 +22,37 @@ public static partial class PathHelper
         return int.TryParse(match.Groups[1].Value, out var id) ? id : null;
     }
 
+    /// <summary>
+    /// Extracts the UUID filename from an Apple-generated CalDAV resource path like
+    /// "/caldav/calendars/{user}/tasks/{UUID}.ics".
+    /// Returns the UUID part without .ics extension, or null if no match.
+    /// </summary>
+    public static string? ExtractUuidFilename(string path)
+    {
+        var match = UuidFilenamePattern().Match(path);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    /// <summary>
+    /// Resolves a chore ID from a CalDAV path using all available lookup strategies:
+    ///   1. Our canonical path pattern (donetick-{id}.ics)
+    ///   2. Apple UUID filename → UID-to-ID cache map
+    /// Use this for GET/DELETE handlers that only have a path (no VTODO body).
+    /// </summary>
+    public static int? ResolveChoreIdFromPath(string path, ChoreCache cache)
+    {
+        // 1. Our canonical format: donetick-{id}.ics
+        var id = ExtractChoreId(path);
+        if (id.HasValue) return id;
+
+        // 2. Apple UUID filename → try cache UID-to-ID map
+        var uuid = ExtractUuidFilename(path);
+        return uuid != null ? cache.GetIdByUid(uuid) : null;
+    }
+
     [GeneratedRegex(@"donetick-(\d+)\.ics$", RegexOptions.Compiled)]
     private static partial Regex ChoreIdPattern();
+
+    [GeneratedRegex(@"/([0-9A-Fa-f-]{36})\.ics$", RegexOptions.Compiled)]
+    private static partial Regex UuidFilenamePattern();
 }

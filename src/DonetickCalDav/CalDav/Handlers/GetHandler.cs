@@ -20,7 +20,7 @@ public sealed class GetHandler
 
     public async Task HandleAsync(HttpContext context)
     {
-        var id = PathHelper.ExtractChoreId(context.Request.Path.Value ?? "");
+        var id = PathHelper.ResolveChoreIdFromPath(context.Request.Path.Value ?? "", _cache);
         if (id == null)
         {
             context.Response.StatusCode = 404;

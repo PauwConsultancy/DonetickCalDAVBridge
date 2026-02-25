@@ -121,7 +121,8 @@ public sealed class ChoreCache
     /// <summary>Resolves an external UID to a Donetick chore ID, or null if unknown.</summary>
     public int? GetIdByUid(string uid)
     {
-        lock (_lock) return _uidToId.GetValueOrDefault(uid);
+        lock (_lock)
+            return _uidToId.TryGetValue(uid, out var id) ? id : null;
     }
 
     /// <summary>Generates a fresh opaque tag using a GUID. Wrapped in quotes per HTTP ETag spec.</summary>
@@ -133,7 +134,7 @@ public sealed class ChoreCache
     /// </summary>
     private static string ComputeETag(DonetickChore chore)
     {
-        var data = $"{chore.Id}-{chore.UpdatedAt:O}-{chore.Status}-{chore.IsActive}-{chore.Name}";
+        var data = $"{chore.Id}-{chore.UpdatedAt:O}-{chore.Status}-{chore.IsActive}-{chore.Name}-{chore.NextDueDate?.ToString("O") ?? "none"}";
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(data));
         return $"\"{Convert.ToHexString(hash)[..16]}\"";
     }

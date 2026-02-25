@@ -45,6 +45,15 @@ public sealed class ReportHandler
             return;
         }
 
+        // sync-collection: Apple uses this for incremental sync after initial load.
+        // We treat it as a full query since we don't track per-client sync tokens.
+        if (DavXmlReader.IsSyncCollection(requestDoc))
+        {
+            _logger.LogDebug("REPORT sync-collection: responding with full resource list");
+            await HandleSyncCollection(context, requestDoc);
+            return;
+        }
+
         _logger.LogWarning("REPORT received with unsupported type: {RootName}", requestDoc.Root?.Name);
         context.Response.StatusCode = 501;
     }
@@ -102,6 +111,32 @@ public sealed class ReportHandler
             writer.AddResponse(href, BuildResourceProps(requestedProps, cached));
         }
 
+        await writer.WriteResponseAsync(ctx);
+    }
+
+    /// <summary>
+    /// sync-collection: returns all resources with a sync-token.
+    /// Since we don't track per-client sync state, we always return the full set
+    /// and use the CTag as the sync-token. Apple will use this to detect changes.
+    /// </summary>
+    private async Task HandleSyncCollection(HttpContext ctx, XDocument doc)
+    {
+        var requestedProps = DavXmlReader.GetRequestedProperties(doc);
+        var writer = new DavXmlWriter();
+        var user = _calDavSettings.Username;
+        var chores = _cache.GetAllChores();
+
+        _logger.LogDebug("sync-collection: returning {Count} resources with sync-token {CTag}",
+            chores.Count, _cache.CTag);
+
+        foreach (var cached in chores)
+        {
+            var href = $"/caldav/calendars/{user}/tasks/donetick-{cached.Chore.Id}.ics";
+            writer.AddResponse(href, BuildResourceProps(requestedProps, cached));
+        }
+
+        // Include sync-token in the response so Apple knows the current state
+        writer.AddSyncToken(_cache.CTag);
         await writer.WriteResponseAsync(ctx);
     }
 

@@ -1,3 +1,4 @@
+using DonetickCalDav.Cache;
 using DonetickCalDav.CalDav.Handlers;
 using Microsoft.AspNetCore.Authentication;
 
@@ -11,13 +12,19 @@ public sealed class CalDavMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<CalDavMiddleware> _logger;
+    private readonly StatusPageHandler _statusPage;
+    private readonly ClientTracker _clientTracker;
 
+    private const string DavCapabilities = "1, 3, access-control, calendar-access";
     private const string AllowedMethods = "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT";
 
-    public CalDavMiddleware(RequestDelegate next, ILogger<CalDavMiddleware> logger)
+    public CalDavMiddleware(RequestDelegate next, ILogger<CalDavMiddleware> logger,
+        StatusPageHandler statusPage, ClientTracker clientTracker)
     {
         _next = next;
         _logger = logger;
+        _statusPage = statusPage;
+        _clientTracker = clientTracker;
     }
 
     public async Task InvokeAsync(
@@ -32,18 +39,28 @@ public sealed class CalDavMiddleware
         var path = context.Request.Path.Value ?? "/";
         var method = context.Request.Method.ToUpperInvariant();
 
-        // .well-known discovery endpoint does not require authentication
+        // Log every incoming request with key headers for debugging
+        _logger.LogDebug(">>> {Method} {Scheme}://{Host}{Path} Auth:{HasAuth} UA:{UserAgent}",
+            method,
+            context.Request.Scheme,
+            context.Request.Host,
+            path,
+            context.Request.Headers.Authorization.Count > 0 ? "yes" : "no",
+            context.Request.Headers.UserAgent.FirstOrDefault() ?? "-");
+
+        // .well-known discovery endpoint — no auth, but include DAV header so Apple
+        // recognizes this as a CalDAV server before following the redirect
         if (path.StartsWith("/.well-known/caldav", StringComparison.OrdinalIgnoreCase))
         {
+            context.Response.Headers["DAV"] = DavCapabilities;
             WellKnownHandler.Handle(context);
             return;
         }
 
-        // Health check endpoint
+        // Status / health check endpoint
         if (path is "/" or "/health")
         {
-            context.Response.StatusCode = 200;
-            await context.Response.WriteAsync("Donetick CalDAV Bridge is running");
+            await _statusPage.HandleAsync(context);
             return;
         }
 
@@ -54,20 +71,34 @@ public sealed class CalDavMiddleware
             return;
         }
 
-        // Enforce Basic Auth for all CalDAV paths
+        // DAV header must be on ALL CalDAV responses — including 401 challenges.
+        // Apple will not send credentials unless it recognizes this as a DAV server.
+        context.Response.Headers["DAV"] = DavCapabilities;
+
+        // OPTIONS must work without auth — Apple checks capabilities before authenticating
+        if (method == "OPTIONS")
+        {
+            OptionsHandler.Handle(context);
+            return;
+        }
+
+        // Enforce Basic Auth for all other CalDAV paths
         var authResult = await context.AuthenticateAsync("BasicAuth");
         if (!authResult.Succeeded)
         {
+            _logger.LogDebug("<<< 401 Challenge for {Method} {Path} — reason: {Reason}",
+                method, path, authResult.Failure?.Message ?? "unknown");
             context.Response.StatusCode = 401;
             context.Response.Headers["WWW-Authenticate"] = "Basic realm=\"DonetickCalDAV\"";
             return;
         }
 
-        // Apple Calendar requires the DAV header on every CalDAV response
-        context.Response.Headers["DAV"] = "1, 3, access-control, calendar-access";
-
-        _logger.LogDebug("CalDAV {Method} {Path} Depth:{Depth}",
+        _logger.LogDebug("CalDAV {Method} {Path} Depth:{Depth} (authenticated)",
             method, path, context.Request.Headers["Depth"].FirstOrDefault() ?? "-");
+
+        // Track client activity for status page
+        _clientTracker.RecordRequest(
+            context.Request.Headers.UserAgent.FirstOrDefault(), method);
 
         await DispatchAsync(context, method, propFindHandler, reportHandler,
             getHandler, putHandler, deleteHandler, propPatchHandler);
@@ -88,10 +119,6 @@ public sealed class CalDavMiddleware
     {
         switch (method)
         {
-            case "OPTIONS":
-                OptionsHandler.Handle(context);
-                break;
-
             case "PROPFIND":
                 await propFindHandler.HandleAsync(context);
                 break;

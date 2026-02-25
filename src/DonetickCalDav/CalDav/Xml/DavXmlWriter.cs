@@ -10,6 +10,7 @@ namespace DonetickCalDav.CalDav.Xml;
 public sealed class DavXmlWriter
 {
     private readonly List<XElement> _responses = [];
+    private string? _syncToken;
 
     /// <summary>
     /// Adds a resource response to the multistatus document.
@@ -32,6 +33,12 @@ public sealed class DavXmlWriter
     }
 
     /// <summary>
+    /// Sets a sync-token to include in the multistatus response.
+    /// Used by sync-collection REPORT responses.
+    /// </summary>
+    public void AddSyncToken(string syncToken) => _syncToken = syncToken;
+
+    /// <summary>
     /// Writes the complete 207 Multi-Status XML response to the HTTP response stream.
     /// </summary>
     public async Task WriteResponseAsync(HttpContext context)
@@ -39,14 +46,17 @@ public sealed class DavXmlWriter
         context.Response.StatusCode = 207;
         context.Response.ContentType = "application/xml; charset=utf-8";
 
-        var doc = new XDocument(
-            new XDeclaration("1.0", "utf-8", null),
-            new XElement(DavNamespaces.D + "multistatus",
-                new XAttribute(XNamespace.Xmlns + "d", DavNamespaces.DavUri),
-                new XAttribute(XNamespace.Xmlns + "cal", DavNamespaces.CalDavUri),
-                new XAttribute(XNamespace.Xmlns + "cs", DavNamespaces.CalendarServerUri),
-                new XAttribute(XNamespace.Xmlns + "apple", DavNamespaces.AppleUri),
-                _responses));
+        var multistatus = new XElement(DavNamespaces.D + "multistatus",
+            new XAttribute(XNamespace.Xmlns + "d", DavNamespaces.DavUri),
+            new XAttribute(XNamespace.Xmlns + "cal", DavNamespaces.CalDavUri),
+            new XAttribute(XNamespace.Xmlns + "cs", DavNamespaces.CalendarServerUri),
+            new XAttribute(XNamespace.Xmlns + "apple", DavNamespaces.AppleUri),
+            _responses);
+
+        if (_syncToken != null)
+            multistatus.Add(new XElement(DavNamespaces.D + "sync-token", _syncToken));
+
+        var doc = new XDocument(new XDeclaration("1.0", "utf-8", null), multistatus);
 
         await using var writer = new StreamWriter(context.Response.Body);
         await writer.WriteAsync(doc.Declaration + "\n" + doc);
