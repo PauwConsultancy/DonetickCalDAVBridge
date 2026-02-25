@@ -19,9 +19,14 @@ public static class VTodoMapper
     /// <summary>
     /// Converts a Donetick chore to a complete VCALENDAR/VTODO ICS string.
     /// </summary>
-    public static string ToIcsString(DonetickChore chore)
+    /// <param name="chore">The Donetick chore to convert.</param>
+    /// <param name="allDayEvents">
+    /// When true, emits DUE/DTSTART as VALUE=DATE (date only) so the task appears as an
+    /// all-day item in Calendar.app and without a specific time in Reminders.app.
+    /// </param>
+    public static string ToIcsString(DonetickChore chore, bool allDayEvents = false)
     {
-        var todo = BuildTodo(chore);
+        var todo = BuildTodo(chore, allDayEvents);
         var calendar = WrapInCalendar(todo);
 
         return Serializer.SerializeToString(calendar);
@@ -50,7 +55,7 @@ public static class VTodoMapper
     };
 
     /// <summary>Builds the core VTODO component from a Donetick chore.</summary>
-    private static Todo BuildTodo(DonetickChore chore)
+    private static Todo BuildTodo(DonetickChore chore, bool allDayEvents)
     {
         var todo = new Todo
         {
@@ -64,7 +69,7 @@ public static class VTodoMapper
             Priority = PriorityMapper.ToVTodoPriority(chore.Priority),
         };
 
-        ApplyDueDate(todo, chore);
+        ApplyDueDate(todo, chore, allDayEvents);
         // Note: we intentionally do NOT emit RRULE. Donetick manages recurrence
         // server-side (updating NextDueDate on completion). Emitting RRULE would
         // cause Calendar.app to generate occurrences client-side, conflicting
@@ -76,13 +81,34 @@ public static class VTodoMapper
         return todo;
     }
 
-    private static void ApplyDueDate(Todo todo, DonetickChore chore)
+    /// <summary>
+    /// Sets the DUE and DTSTART properties on the VTODO.
+    /// When <paramref name="allDayEvents"/> is true, emits VALUE=DATE (no time component),
+    /// causing the task to appear as an all-day item in Calendar.app and without a specific
+    /// time in Reminders.app. Otherwise emits full DATE-TIME values in UTC.
+    /// </summary>
+    private static void ApplyDueDate(Todo todo, DonetickChore chore, bool allDayEvents)
     {
         if (!chore.NextDueDate.HasValue) return;
 
-        todo.Due = new CalDateTime(chore.NextDueDate.Value, "UTC");
-        // DtStart on the date portion aids Calendar.app display compatibility
-        todo.DtStart = new CalDateTime(chore.NextDueDate.Value.Date, "UTC");
+        if (allDayEvents)
+        {
+            // VALUE=DATE — no time component, no timezone.
+            // Calendar.app renders this as an all-day item at the top of the day.
+            // Reminders.app shows "today" instead of "today at 14:00".
+            // HasTime must be explicitly set to false so Ical.Net serialises as
+            // "DUE;VALUE=DATE:YYYYMMDD" instead of "DUE:YYYYMMDDTHHMMSS".
+            var d = chore.NextDueDate.Value;
+            var dateOnly = new CalDateTime(d.Year, d.Month, d.Day) { HasTime = false };
+            todo.Due = dateOnly;
+            todo.DtStart = dateOnly;
+        }
+        else
+        {
+            todo.Due = new CalDateTime(chore.NextDueDate.Value, "UTC");
+            // DtStart on the date portion aids Calendar.app display compatibility
+            todo.DtStart = new CalDateTime(chore.NextDueDate.Value.Date, "UTC");
+        }
     }
 
     private static void ApplyCategories(Todo todo, DonetickChore chore)

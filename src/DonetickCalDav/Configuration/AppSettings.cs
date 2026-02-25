@@ -74,6 +74,16 @@ public sealed class CalDavSettings
     /// </summary>
     public string DefaultCalendarName { get; set; } = "Algemeen";
 
+    /// <summary>
+    /// When true, emits DUE and DTSTART with VALUE=DATE (date only, no time component).
+    /// This makes tasks appear as all-day items in Calendar.app instead of at a specific hour.
+    /// Reminders.app shows "today" instead of "today at 14:00".
+    /// <para>
+    /// When false (default), DUE is emitted as DATE-TIME with the full timestamp from Donetick.
+    /// </para>
+    /// </summary>
+    public bool AllDayEvents { get; set; }
+
     /// <summary>TCP port the CalDAV server listens on.</summary>
     [Range(1, 65535)]
     public int ListenPort { get; set; } = 5232;

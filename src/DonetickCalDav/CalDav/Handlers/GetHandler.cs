@@ -1,5 +1,7 @@
 using DonetickCalDav.Cache;
 using DonetickCalDav.CalDav.VTodo;
+using DonetickCalDav.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace DonetickCalDav.CalDav.Handlers;
 
@@ -10,11 +12,13 @@ namespace DonetickCalDav.CalDav.Handlers;
 public sealed class GetHandler
 {
     private readonly ChoreCache _cache;
+    private readonly CalDavSettings _calDavSettings;
     private readonly ILogger<GetHandler> _logger;
 
-    public GetHandler(ChoreCache cache, ILogger<GetHandler> logger)
+    public GetHandler(ChoreCache cache, IOptions<AppSettings> settings, ILogger<GetHandler> logger)
     {
         _cache = cache;
+        _calDavSettings = settings.Value.CalDav;
         _logger = logger;
     }
 
@@ -40,6 +44,6 @@ public sealed class GetHandler
         context.Response.StatusCode = 200;
         context.Response.ContentType = "text/calendar; charset=utf-8";
         context.Response.Headers["ETag"] = cached.ETag;
-        await context.Response.WriteAsync(VTodoMapper.ToIcsString(cached.Chore));
+        await context.Response.WriteAsync(VTodoMapper.ToIcsString(cached.Chore, _calDavSettings.AllDayEvents));
     }
 }

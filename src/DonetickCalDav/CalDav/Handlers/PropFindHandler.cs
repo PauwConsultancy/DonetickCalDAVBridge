@@ -262,7 +262,7 @@ public sealed class PropFindHandler
     }
 
     /// <summary>Builds properties for an individual VTODO resource.</summary>
-    private static Dictionary<XName, object?> BuildResourceProperties(List<XName> props, CachedChore cached)
+    private Dictionary<XName, object?> BuildResourceProperties(List<XName> props, CachedChore cached)
     {
         var found = new Dictionary<XName, object?>();
 
@@ -273,7 +273,7 @@ public sealed class PropFindHandler
             else if (prop == DavNamespaces.D + "getcontenttype")
                 found[prop] = "text/calendar; component=vtodo";
             else if (prop == DavNamespaces.C + "calendar-data")
-                found[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore);
+                found[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore, _calDavSettings.AllDayEvents);
             else if (prop == DavNamespaces.D + "resourcetype")
                 found[prop] = null; // Empty resourcetype signals "not a collection"
         }

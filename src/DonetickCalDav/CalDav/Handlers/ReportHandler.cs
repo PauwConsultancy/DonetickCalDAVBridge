@@ -153,7 +153,7 @@ public sealed class ReportHandler
     }
 
     /// <summary>Builds the property dictionary for a single VTODO resource.</summary>
-    private static Dictionary<XName, object?> BuildResourceProps(List<XName> requested, CachedChore cached)
+    private Dictionary<XName, object?> BuildResourceProps(List<XName> requested, CachedChore cached)
     {
         var props = new Dictionary<XName, object?>();
 
@@ -162,7 +162,7 @@ public sealed class ReportHandler
             if (prop == DavNamespaces.D + "getetag")
                 props[prop] = cached.ETag;
             else if (prop == DavNamespaces.C + "calendar-data")
-                props[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore);
+                props[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore, _calDavSettings.AllDayEvents);
             else if (prop == DavNamespaces.D + "getcontenttype")
                 props[prop] = "text/calendar; component=vtodo";
         }

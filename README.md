@@ -127,6 +127,22 @@ The default list keeps the configured `CalDav__CalendarColor`.
 - **One-way** — labels are read from Donetick; you cannot assign labels from Apple Reminders (the Donetick eAPI does not support label management)
 - **New tasks** — tasks created via Apple Reminders always appear in the default list, because the eAPI cannot set labels on create
 
+## All-Day Events
+
+By default, tasks with a due date are emitted with a full date-time value (e.g. `DUE:20250618T100000Z`). This means they appear at a specific time in Calendar.app and show "today at 10:00" in Reminders.app.
+
+Enable **All-Day Events** to emit date-only values instead (`DUE;VALUE=DATE:20250618`). This causes:
+
+- **Calendar.app** — tasks appear as all-day items at the top of the day, not at a specific hour
+- **Reminders.app** — tasks show "today" instead of "today at 10:00"
+
+```yaml
+environment:
+  - CalDav__AllDayEvents=true
+```
+
+> **Note:** This affects all tasks globally. Donetick's external API does not expose per-task time-of-day preferences, so the bridge cannot distinguish between tasks that should have a specific time and tasks that should be all-day.
+
 ## HTTPS Setup
 
 Apple Calendar and Reminders **will not send Basic Auth credentials over plain HTTP**. You must enable HTTPS using one of the methods below.
@@ -193,6 +209,7 @@ All settings are configured via environment variables:
 | `CalDav__CalendarColor`         | `#4A90D9FF`            | Calendar color (RGBA hex)                |
 | `CalDav__GroupByLabel`          | `false`                | Split labels into separate lists         |
 | `CalDav__DefaultCalendarName`   | `Algemeen`             | Default list name (when GroupByLabel=true)|
+| `CalDav__AllDayEvents`          | `false`                | Show tasks as all-day items (no time)    |
 | `CalDav__ListenPort`            | `5232`                 | Port the bridge listens on               |
 | `CalDav__Tls__CertPath`         | *(none)*               | PEM certificate file path (enables HTTPS)|
 | `CalDav__Tls__KeyPath`          | *(none)*               | PEM private key file path                |
@@ -291,7 +308,7 @@ src/DonetickCalDav/
 
 Planned features and improvements (contributions welcome):
 
-- [ ] **All-day events** — option to emit tasks without a specific time (DATE instead of DATE-TIME), so they appear as all-day items in Calendar.app instead of at a specific hour
+- [x] **All-day events** — option to emit tasks without a specific time (`CalDav__AllDayEvents=true`), so they appear as all-day items in Calendar.app instead of at a specific hour
 - [ ] **Preserve original scheduled time** — option to keep the originally configured due time on recurring tasks after completion. Currently, when you complete a recurring task (e.g. "Shave" scheduled daily at 08:00) at a different time (e.g. 10:00), Donetick advances the next due date using the completion time, causing all future occurrences to show at 10:00 instead of the intended 08:00
 - [ ] **Unraid template** — create an Unraid Community Applications XML template for easy installation via the Unraid app store
 

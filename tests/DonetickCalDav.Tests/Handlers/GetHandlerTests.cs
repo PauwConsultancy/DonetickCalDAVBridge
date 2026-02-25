@@ -1,19 +1,31 @@
 using DonetickCalDav.Cache;
 using DonetickCalDav.CalDav.Handlers;
+using DonetickCalDav.Configuration;
 using DonetickCalDav.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace DonetickCalDav.Tests.Handlers;
 
 public class GetHandlerTests
 {
+    private static readonly AppSettings TestSettings = new()
+    {
+        CalDav = new CalDavSettings
+        {
+            Username = "user",
+            CalendarName = "Donetick Tasks",
+            CalendarColor = "#4A90D9FF",
+        },
+    };
+
     private readonly ChoreCache _cache = new(NullLogger<ChoreCache>.Instance);
     private readonly GetHandler _handler;
 
     public GetHandlerTests()
     {
-        _handler = new GetHandler(_cache, NullLogger<GetHandler>.Instance);
+        _handler = new GetHandler(_cache, Options.Create(TestSettings), NullLogger<GetHandler>.Instance);
     }
 
     [Fact]

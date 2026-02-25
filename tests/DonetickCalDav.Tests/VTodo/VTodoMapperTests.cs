@@ -216,6 +216,96 @@ public class VTodoMapperTests
         ics.Should().Contain("PRODID:");
     }
 
+    // ── All-day events ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void ToIcsString_AllDayFalse_EmitsDateTimeWithTimezone()
+    {
+        var chore = TestChoreFactory.WithDueDate();
+
+        var ics = VTodoMapper.ToIcsString(chore, allDayEvents: false);
+
+        // DATE-TIME format includes TZID or UTC suffix (e.g. "20250618T100000Z")
+        ics.Should().Contain("DUE");
+        // Should NOT contain VALUE=DATE (which signals date-only)
+        // The default DATE-TIME serialisation does not emit VALUE=DATE-TIME explicitly
+        var calendar = Calendar.Load(ics);
+        var todo = calendar.Todos[0];
+        todo.Due!.HasTime.Should().BeTrue("DUE should include a time component");
+    }
+
+    [Fact]
+    public void ToIcsString_AllDayTrue_EmitsDateOnly()
+    {
+        var chore = TestChoreFactory.WithDueDate();
+
+        var ics = VTodoMapper.ToIcsString(chore, allDayEvents: true);
+
+        // VALUE=DATE means no time component
+        ics.Should().Contain("VALUE=DATE");
+
+        var calendar = Calendar.Load(ics);
+        var todo = calendar.Todos[0];
+        todo.Due!.HasTime.Should().BeFalse("DUE should be date-only (all-day)");
+        todo.DtStart!.HasTime.Should().BeFalse("DTSTART should be date-only (all-day)");
+    }
+
+    [Fact]
+    public void ToIcsString_AllDayTrue_PreservesDatePortion()
+    {
+        // Due date: 2025-06-18 10:00 UTC — all-day should keep the date, drop the time
+        var chore = TestChoreFactory.WithDueDate();
+
+        var ics = VTodoMapper.ToIcsString(chore, allDayEvents: true);
+        var calendar = Calendar.Load(ics);
+        var todo = calendar.Todos[0];
+
+        todo.Due!.Year.Should().Be(2025);
+        todo.Due.Month.Should().Be(6);
+        todo.Due.Day.Should().Be(18);
+    }
+
+    [Fact]
+    public void ToIcsString_AllDayTrue_NoDueDate_OmitsDue()
+    {
+        var chore = TestChoreFactory.Simple();
+        chore.NextDueDate = null;
+
+        var ics = VTodoMapper.ToIcsString(chore, allDayEvents: true);
+        var calendar = Calendar.Load(ics);
+        var todo = calendar.Todos[0];
+
+        todo.Due.Should().BeNull("no due date means DUE is omitted regardless of all-day setting");
+    }
+
+    [Fact]
+    public void ToIcsString_AllDayTrue_DueAndDtStartAreSameDate()
+    {
+        var chore = TestChoreFactory.WithDueDate();
+
+        var ics = VTodoMapper.ToIcsString(chore, allDayEvents: true);
+        var calendar = Calendar.Load(ics);
+        var todo = calendar.Todos[0];
+
+        // Both DUE and DTSTART should be the same date-only value
+        todo.Due!.Date.Should().Be(todo.DtStart!.Date);
+    }
+
+    [Fact]
+    public void ToIcsString_DefaultParameter_MatchesFalse()
+    {
+        var chore = TestChoreFactory.WithDueDate();
+
+        // Default (no argument) should behave like allDayEvents: false
+        var icsDefault = VTodoMapper.ToIcsString(chore);
+        var icsFalse = VTodoMapper.ToIcsString(chore, allDayEvents: false);
+
+        var calDefault = Calendar.Load(icsDefault);
+        var calFalse = Calendar.Load(icsFalse);
+
+        calDefault.Todos[0].Due!.HasTime.Should().Be(calFalse.Todos[0].Due!.HasTime);
+    }
+
     // ── ToCreateRequest ─────────────────────────────────────────────────────
 
     [Fact]
