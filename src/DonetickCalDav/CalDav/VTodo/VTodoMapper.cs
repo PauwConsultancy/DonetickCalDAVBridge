@@ -67,7 +67,7 @@ public static class VTodoMapper
         var todo = new Todo
         {
             Uid = $"donetick-{chore.Id}@donetick",
-            Summary = chore.Name,
+            Summary = chore.Name ?? "Untitled",
             Description = chore.Description ?? "",
             DtStamp = new CalDateTime(chore.UpdatedAt, "UTC"),
             Created = new CalDateTime(chore.CreatedAt, "UTC"),
@@ -114,10 +114,10 @@ public static class VTodoMapper
             // Reminders.app shows "today" instead of "today at 14:00".
             // HasTime must be explicitly set to false so Ical.Net serialises as
             // "DUE;VALUE=DATE:YYYYMMDD" instead of "DUE:YYYYMMDDTHHMMSS".
-            var dateOnly = new CalDateTime(effectiveDate.Year, effectiveDate.Month, effectiveDate.Day)
-                { HasTime = false };
-            todo.Due = dateOnly;
-            todo.DtStart = dateOnly;
+            // IMPORTANT: separate CalDateTime instances — Ical.Net mutates objects
+            // during serialisation, so sharing a single instance causes NullReferenceException.
+            todo.Due = MakeDateOnly(effectiveDate);
+            todo.DtStart = MakeDateOnly(effectiveDate);
         }
         else
         {
@@ -171,12 +171,24 @@ public static class VTodoMapper
             scheduledTime.Hour, scheduledTime.Minute, 0, DateTimeKind.Utc);
     }
 
+    /// <summary>
+    /// Creates a date-only CalDateTime (VALUE=DATE) with no time component and no timezone.
+    /// Uses explicit UTC DateTimeKind and null TzId to prevent Ical.Net's PropertySerializer
+    /// from hitting null references on timezone lookups in containerised environments.
+    /// </summary>
+    private static CalDateTime MakeDateOnly(DateTime dt) =>
+        new(new DateTime(dt.Year, dt.Month, dt.Day, 0, 0, 0, DateTimeKind.Utc))
+            { HasTime = false, TzId = null };
+
     private static void ApplyCategories(Todo todo, DonetickChore chore)
     {
         if (chore.LabelsV2 is not { Count: > 0 }) return;
 
         foreach (var label in chore.LabelsV2)
-            todo.Categories.Add(label.Name);
+        {
+            if (!string.IsNullOrEmpty(label.Name))
+                todo.Categories.Add(label.Name);
+        }
     }
 
     /// <summary>
@@ -189,7 +201,10 @@ public static class VTodoMapper
     {
         if (chore.LabelsV2 is not { Count: > 0 }) return;
 
-        var hashtags = string.Join(",", chore.LabelsV2.Select(l => l.Name));
+        var hashtags = string.Join(",", chore.LabelsV2
+            .Where(l => !string.IsNullOrEmpty(l.Name))
+            .Select(l => l.Name));
+        if (string.IsNullOrEmpty(hashtags)) return;
         todo.Properties.Add(new CalendarProperty("X-APPLE-HASHTAGS", hashtags));
     }
 
