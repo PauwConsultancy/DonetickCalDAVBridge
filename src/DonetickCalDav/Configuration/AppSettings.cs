@@ -84,6 +84,22 @@ public sealed class CalDavSettings
     /// </summary>
     public bool AllDayEvents { get; set; }
 
+    /// <summary>
+    /// When true, the bridge replaces the time portion of NextDueDate with the originally
+    /// configured scheduled time from <c>FrequencyMetadata.Time</c> (if available).
+    /// <para>
+    /// Problem: Donetick advances NextDueDate based on completion time. If a task is
+    /// scheduled daily at 08:00 but completed at 10:00, the next due date moves to 10:00.
+    /// With this option enabled, the bridge corrects it back to 08:00 in the CalDAV output.
+    /// </para>
+    /// <para>
+    /// Only affects recurring tasks that have a configured time in FrequencyMetadata.
+    /// Non-recurring tasks and tasks without a configured time are unaffected.
+    /// Has no visible effect when <see cref="AllDayEvents"/> is true (no time component shown).
+    /// </para>
+    /// </summary>
+    public bool PreserveScheduledTime { get; set; }
+
     /// <summary>TCP port the CalDAV server listens on.</summary>
     [Range(1, 65535)]
     public int ListenPort { get; set; } = 5232;

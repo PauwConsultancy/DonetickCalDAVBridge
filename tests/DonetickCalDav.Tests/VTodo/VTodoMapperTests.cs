@@ -1,4 +1,5 @@
 using DonetickCalDav.CalDav.VTodo;
+using DonetickCalDav.Donetick.Models;
 using DonetickCalDav.Tests.Helpers;
 using FluentAssertions;
 using Ical.Net;
@@ -304,6 +305,148 @@ public class VTodoMapperTests
         var calFalse = Calendar.Load(icsFalse);
 
         calDefault.Todos[0].Due!.HasTime.Should().Be(calFalse.Todos[0].Due!.HasTime);
+    }
+
+    // ── Preserve scheduled time ─────────────────────────────────────────────
+
+    [Fact]
+    public void AdjustToScheduledTime_WithTimeAndTimezone_ReplacesTimeInLocalTz()
+    {
+        // NextDueDate: 2025-06-18 08:00 UTC (= 10:00 in Europe/Amsterdam, CEST = UTC+2)
+        // Completed at a different time, so Donetick set 08:00 UTC.
+        // Configured scheduled time: 06:00 (in Amsterdam = 04:00 UTC in summer)
+        var nextDue = new DateTime(2025, 6, 18, 8, 0, 0, DateTimeKind.Utc);
+        var metadata = new DonetickFrequencyMetadata { Time = "06:00", Timezone = "Europe/Amsterdam" };
+
+        var adjusted = VTodoMapper.AdjustToScheduledTime(nextDue, metadata);
+
+        // 06:00 Amsterdam in summer (CEST, UTC+2) = 04:00 UTC
+        adjusted.Should().Be(new DateTime(2025, 6, 18, 4, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Fact]
+    public void AdjustToScheduledTime_WithTimeOnly_AdjustsInUtc()
+    {
+        // No timezone configured — adjust directly in UTC
+        var nextDue = new DateTime(2025, 6, 18, 10, 30, 0, DateTimeKind.Utc);
+        var metadata = new DonetickFrequencyMetadata { Time = "08:00" };
+
+        var adjusted = VTodoMapper.AdjustToScheduledTime(nextDue, metadata);
+
+        adjusted.Should().Be(new DateTime(2025, 6, 18, 8, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Fact]
+    public void AdjustToScheduledTime_NoMetadata_ReturnsOriginal()
+    {
+        var nextDue = new DateTime(2025, 6, 18, 10, 0, 0, DateTimeKind.Utc);
+
+        var adjusted = VTodoMapper.AdjustToScheduledTime(nextDue, null);
+
+        adjusted.Should().Be(nextDue);
+    }
+
+    [Fact]
+    public void AdjustToScheduledTime_EmptyTime_ReturnsOriginal()
+    {
+        var nextDue = new DateTime(2025, 6, 18, 10, 0, 0, DateTimeKind.Utc);
+        var metadata = new DonetickFrequencyMetadata { Time = "", Timezone = "Europe/Amsterdam" };
+
+        var adjusted = VTodoMapper.AdjustToScheduledTime(nextDue, metadata);
+
+        adjusted.Should().Be(nextDue);
+    }
+
+    [Fact]
+    public void AdjustToScheduledTime_InvalidTime_ReturnsOriginal()
+    {
+        var nextDue = new DateTime(2025, 6, 18, 10, 0, 0, DateTimeKind.Utc);
+        var metadata = new DonetickFrequencyMetadata { Time = "not-a-time", Timezone = "Europe/Amsterdam" };
+
+        var adjusted = VTodoMapper.AdjustToScheduledTime(nextDue, metadata);
+
+        adjusted.Should().Be(nextDue);
+    }
+
+    [Fact]
+    public void AdjustToScheduledTime_InvalidTimezone_FallsBackToUtc()
+    {
+        var nextDue = new DateTime(2025, 6, 18, 10, 0, 0, DateTimeKind.Utc);
+        var metadata = new DonetickFrequencyMetadata { Time = "08:00", Timezone = "Invalid/Timezone" };
+
+        var adjusted = VTodoMapper.AdjustToScheduledTime(nextDue, metadata);
+
+        // Falls back to UTC adjustment
+        adjusted.Should().Be(new DateTime(2025, 6, 18, 8, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Fact]
+    public void AdjustToScheduledTime_WinterTime_HandlesDstCorrectly()
+    {
+        // January in Amsterdam = CET (UTC+1), not CEST (UTC+2)
+        var nextDue = new DateTime(2025, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+        var metadata = new DonetickFrequencyMetadata { Time = "08:00", Timezone = "Europe/Amsterdam" };
+
+        var adjusted = VTodoMapper.AdjustToScheduledTime(nextDue, metadata);
+
+        // 08:00 Amsterdam in winter (CET, UTC+1) = 07:00 UTC
+        adjusted.Should().Be(new DateTime(2025, 1, 15, 7, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Fact]
+    public void ToIcsString_PreserveScheduledTime_AdjustsDueDate()
+    {
+        var chore = TestChoreFactory.DailyRecurring();
+        // Simulate: task scheduled at 08:00 Amsterdam, completed at 10:00 → Donetick set 08:00 UTC
+        chore.NextDueDate = new DateTime(2025, 6, 16, 8, 0, 0, DateTimeKind.Utc);
+        chore.FrequencyMetadata = new DonetickFrequencyMetadata
+        {
+            Time = "08:00",
+            Timezone = "Europe/Amsterdam",
+        };
+
+        var ics = VTodoMapper.ToIcsString(chore, preserveScheduledTime: true);
+        var calendar = Calendar.Load(ics);
+        var todo = calendar.Todos[0];
+
+        // 08:00 Amsterdam CEST = 06:00 UTC
+        todo.Due!.Hour.Should().Be(6);
+        todo.Due.Minute.Should().Be(0);
+    }
+
+    [Fact]
+    public void ToIcsString_PreserveScheduledTimeFalse_KeepsOriginalTime()
+    {
+        var chore = TestChoreFactory.DailyRecurring();
+        chore.NextDueDate = new DateTime(2025, 6, 16, 8, 0, 0, DateTimeKind.Utc);
+        chore.FrequencyMetadata = new DonetickFrequencyMetadata
+        {
+            Time = "06:00",
+            Timezone = "Europe/Amsterdam",
+        };
+
+        var ics = VTodoMapper.ToIcsString(chore, preserveScheduledTime: false);
+        var calendar = Calendar.Load(ics);
+        var todo = calendar.Todos[0];
+
+        // Should keep original 08:00 UTC, NOT adjust to 04:00 UTC
+        todo.Due!.Hour.Should().Be(8);
+    }
+
+    [Fact]
+    public void ToIcsString_PreserveScheduledTime_NonRecurringNoMetadata_NoChange()
+    {
+        // Non-recurring task without FrequencyMetadata.Time — should not be affected
+        var chore = TestChoreFactory.WithDueDate();
+        chore.FrequencyMetadata = null;
+
+        var icsWithout = VTodoMapper.ToIcsString(chore, preserveScheduledTime: false);
+        var icsWith = VTodoMapper.ToIcsString(chore, preserveScheduledTime: true);
+
+        var calWithout = Calendar.Load(icsWithout);
+        var calWith = Calendar.Load(icsWith);
+
+        calWith.Todos[0].Due!.Value.Should().Be(calWithout.Todos[0].Due!.Value);
     }
 
     // ── ToCreateRequest ─────────────────────────────────────────────────────

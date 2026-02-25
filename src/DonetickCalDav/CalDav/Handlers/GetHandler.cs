@@ -44,6 +44,7 @@ public sealed class GetHandler
         context.Response.StatusCode = 200;
         context.Response.ContentType = "text/calendar; charset=utf-8";
         context.Response.Headers["ETag"] = cached.ETag;
-        await context.Response.WriteAsync(VTodoMapper.ToIcsString(cached.Chore, _calDavSettings.AllDayEvents));
+        await context.Response.WriteAsync(VTodoMapper.ToIcsString(cached.Chore,
+            _calDavSettings.AllDayEvents, _calDavSettings.PreserveScheduledTime));
     }
 }

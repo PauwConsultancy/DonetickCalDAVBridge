@@ -2,11 +2,19 @@
 
 A lightweight bridge that exposes [Donetick](https://donetick.com) tasks as CalDAV VTODO items, making them accessible in Apple Reminders, Thunderbird, and other CalDAV-compatible clients.
 
-## Vibe code warming
+> [!caution]
+> ## Vibe code warning
 I let Claude code write the whole project. I did some checks and balances, but I wouldn't trust exposing this to the internet. If you only run it internal or via something like Tailscale you should be kinda fine.
 Make backups! Don't come complaining to me if something gets f'ed up.
-I made it for my own needs and if you see benefits from it feel free to use it also.
+I made it for my own needs and if you see benefits from it feel free to use.
 If you have improvements please share them.
+
+## Why does this exist?
+I want recurrence from completion date not planned date some for tasks/chores and Donetick seems to be the tool for this. I like that Donetick can give me points for completing items, so I have additional motivation for doing them.
+
+I use my calendar app as my primary workflow to see what things I have planned. I didn't want to rely on opening Donetick for my chores, because then I'm sure I'll stop using it sooner then later.
+
+I wanted to see if I can let AI write a complete project with me just supervising.
 
 ## Features
 
@@ -143,6 +151,25 @@ environment:
 
 > **Note:** This affects all tasks globally. Donetick's external API does not expose per-task time-of-day preferences, so the bridge cannot distinguish between tasks that should have a specific time and tasks that should be all-day.
 
+## Preserve Scheduled Time
+
+When you complete a recurring task at a different time than scheduled, Donetick advances the next due date using the **completion time**. For example: "Shave" is scheduled daily at 08:00, but you complete it at 10:00 — now all future occurrences show at 10:00 instead of 08:00.
+
+Enable **Preserve Scheduled Time** to correct this. The bridge reads the originally configured time from `FrequencyMetadata.Time` and replaces the time portion of the due date:
+
+```yaml
+environment:
+  - CalDav__PreserveScheduledTime=true
+```
+
+| Scenario | Without | With |
+|---|---|---|
+| "Shave" scheduled 08:00, completed at 10:00 | Next due: tomorrow 10:00 | Next due: tomorrow 08:00 |
+| Task without configured time | Unchanged | Unchanged |
+| Non-recurring task | Unchanged | Unchanged |
+
+> **Note:** This option uses the time and timezone stored in Donetick's `FrequencyMetadata`. Tasks that were created without a specific scheduled time are not affected. Has no visible effect when `AllDayEvents` is enabled (no time component shown).
+
 ## HTTPS Setup
 
 Apple Calendar and Reminders **will not send Basic Auth credentials over plain HTTP**. You must enable HTTPS using one of the methods below.
@@ -210,6 +237,7 @@ All settings are configured via environment variables:
 | `CalDav__GroupByLabel`          | `false`                | Split labels into separate lists         |
 | `CalDav__DefaultCalendarName`   | `Algemeen`             | Default list name (when GroupByLabel=true)|
 | `CalDav__AllDayEvents`          | `false`                | Show tasks as all-day items (no time)    |
+| `CalDav__PreserveScheduledTime` | `false`                | Keep original scheduled time on recurring|
 | `CalDav__ListenPort`            | `5232`                 | Port the bridge listens on               |
 | `CalDav__Tls__CertPath`         | *(none)*               | PEM certificate file path (enables HTTPS)|
 | `CalDav__Tls__KeyPath`          | *(none)*               | PEM private key file path                |
@@ -309,7 +337,7 @@ src/DonetickCalDav/
 Planned features and improvements (contributions welcome):
 
 - [x] **All-day events** — option to emit tasks without a specific time (`CalDav__AllDayEvents=true`), so they appear as all-day items in Calendar.app instead of at a specific hour
-- [ ] **Preserve original scheduled time** — option to keep the originally configured due time on recurring tasks after completion. Currently, when you complete a recurring task (e.g. "Shave" scheduled daily at 08:00) at a different time (e.g. 10:00), Donetick advances the next due date using the completion time, causing all future occurrences to show at 10:00 instead of the intended 08:00
+- [x] **Preserve original scheduled time** — option to keep the originally configured due time on recurring tasks (`CalDav__PreserveScheduledTime=true`)
 - [ ] **Unraid template** — create an Unraid Community Applications XML template for easy installation via the Unraid app store
 
 ## License

@@ -162,7 +162,8 @@ public sealed class ReportHandler
             if (prop == DavNamespaces.D + "getetag")
                 props[prop] = cached.ETag;
             else if (prop == DavNamespaces.C + "calendar-data")
-                props[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore, _calDavSettings.AllDayEvents);
+                props[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore,
+                    _calDavSettings.AllDayEvents, _calDavSettings.PreserveScheduledTime);
             else if (prop == DavNamespaces.D + "getcontenttype")
                 props[prop] = "text/calendar; component=vtodo";
         }

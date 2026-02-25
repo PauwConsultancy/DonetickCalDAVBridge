@@ -273,7 +273,8 @@ public sealed class PropFindHandler
             else if (prop == DavNamespaces.D + "getcontenttype")
                 found[prop] = "text/calendar; component=vtodo";
             else if (prop == DavNamespaces.C + "calendar-data")
-                found[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore, _calDavSettings.AllDayEvents);
+                found[prop] = VTodo.VTodoMapper.ToIcsString(cached.Chore,
+                    _calDavSettings.AllDayEvents, _calDavSettings.PreserveScheduledTime);
             else if (prop == DavNamespaces.D + "resourcetype")
                 found[prop] = null; // Empty resourcetype signals "not a collection"
         }

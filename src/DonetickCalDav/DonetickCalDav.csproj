@@ -10,4 +10,8 @@
     <PackageReference Include="Ical.Net" Version="4.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DonetickCalDav.Tests" />
+  </ItemGroup>
+
 </Project>
