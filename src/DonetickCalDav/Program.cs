@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
-const string Version = "0.4.0";
+const string Version = "0.5.0";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +24,9 @@ builder.Services.AddHttpClient<IDonetickApiClient, DonetickApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// -- Cache, client tracking, and background sync --
+// -- Cache, calendar resolver, client tracking, and background sync --
 builder.Services.AddSingleton<ChoreCache>();
+builder.Services.AddSingleton<CalendarResolver>();
 builder.Services.AddSingleton<ClientTracker>();
 builder.Services.AddHostedService<ChoreSyncService>();
 
@@ -53,9 +54,11 @@ builder.Services.AddAuthentication("BasicAuth")
 
 // -- Logging: suppress noisy framework logs --
 // Apple CalDAV clients always probe without credentials first (getting 401), then retry with
-// credentials. The ASP.NET Core auth framework logs each 401 at Info level, flooding the logs.
+// credentials. Both the ASP.NET Core auth framework and our own CalDavAuthenticationHandler
+// log each 401 at Info level, flooding the logs with "Missing Authorization header" messages.
 // Similarly, the HttpClient factory logs every request/response at Info level.
 builder.Logging.AddFilter("Microsoft.AspNetCore.Authentication", LogLevel.Warning);
+builder.Logging.AddFilter("DonetickCalDav.CalDav.Middleware.CalDavAuthenticationHandler", LogLevel.Warning);
 builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 
 // -- Kestrel configuration (HTTP or HTTPS) --

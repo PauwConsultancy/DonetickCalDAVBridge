@@ -106,4 +106,27 @@ public class PathHelperTests
 
         id.Should().Be(7);
     }
+
+    // ── ExtractCalendarSlug ─────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("/caldav/calendars/testuser/tasks/", "testuser", "tasks")]
+    [InlineData("/caldav/calendars/testuser/werk/", "testuser", "werk")]
+    [InlineData("/caldav/calendars/testuser/tasks/donetick-42.ics", "testuser", "tasks")]
+    [InlineData("/caldav/calendars/testuser/huishouden/donetick-1.ics", "testuser", "huishouden")]
+    [InlineData("/caldav/calendars/TESTUSER/Tasks/", "testuser", "tasks")]
+    public void ExtractCalendarSlug_ValidPath_ReturnsSlug(string path, string user, string expectedSlug)
+    {
+        PathHelper.ExtractCalendarSlug(path, user).Should().Be(expectedSlug);
+    }
+
+    [Theory]
+    [InlineData("/caldav/principals/testuser/", "testuser")]
+    [InlineData("/caldav/calendars/otheruser/tasks/", "testuser")]
+    [InlineData("/caldav/", "testuser")]
+    [InlineData("", "testuser")]
+    public void ExtractCalendarSlug_InvalidPath_ReturnsNull(string path, string user)
+    {
+        PathHelper.ExtractCalendarSlug(path, user).Should().BeNull();
+    }
 }

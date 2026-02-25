@@ -54,6 +54,26 @@ public sealed class CalDavSettings
     /// <summary>Calendar colour in Apple hex format (RRGGBBAA).</summary>
     public string CalendarColor { get; set; } = "#4A90D9FF";
 
+    /// <summary>
+    /// When true, creates separate CalDAV calendar lists per Donetick label.
+    /// Tasks with exactly one label appear in that label's list; tasks with zero
+    /// or multiple labels appear in the default list.
+    /// <para>
+    /// Background: Apple Reminders does not render CATEGORIES or X-APPLE-HASHTAGS
+    /// for third-party CalDAV accounts — tags are only supported on iCloud lists.
+    /// Splitting into separate lists is the only way to visually group tasks by
+    /// label in Apple Reminders.
+    /// </para>
+    /// </summary>
+    public bool GroupByLabel { get; set; }
+
+    /// <summary>
+    /// Display name for the default/catch-all calendar when <see cref="GroupByLabel"/> is enabled.
+    /// Tasks with zero or multiple labels appear here.
+    /// Ignored when GroupByLabel is false (CalendarName is used instead).
+    /// </summary>
+    public string DefaultCalendarName { get; set; } = "Algemeen";
+
     /// <summary>TCP port the CalDAV server listens on.</summary>
     [Range(1, 65535)]
     public int ListenPort { get; set; } = 5232;

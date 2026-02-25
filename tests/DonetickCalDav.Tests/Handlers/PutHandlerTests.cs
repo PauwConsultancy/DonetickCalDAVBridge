@@ -28,8 +28,11 @@ public class PutHandlerTests
         _client.GetAllChoresAsync(Arg.Any<CancellationToken>())
             .Returns(new List<DonetickChore>());
 
+        var resolver = new CalendarResolver(_cache, Options.Create(TestSettings));
+
         _handler = new PutHandler(
             _cache,
+            resolver,
             _client,
             Options.Create(TestSettings),
             NullLogger<PutHandler>.Instance);

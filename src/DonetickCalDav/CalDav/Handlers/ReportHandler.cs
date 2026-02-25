@@ -7,18 +7,26 @@ using Microsoft.Extensions.Options;
 namespace DonetickCalDav.CalDav.Handlers;
 
 /// <summary>
-/// Handles CalDAV REPORT requests: calendar-query and calendar-multiget.
+/// Handles CalDAV REPORT requests: calendar-query, calendar-multiget, and sync-collection.
 /// These are the primary mechanisms Apple Calendar uses to fetch VTODO data.
+/// When <see cref="CalendarResolver.GroupByLabel"/> is enabled, results are scoped to the
+/// calendar collection identified by the URL slug.
 /// </summary>
 public sealed class ReportHandler
 {
     private readonly ChoreCache _cache;
+    private readonly CalendarResolver _resolver;
     private readonly CalDavSettings _calDavSettings;
     private readonly ILogger<ReportHandler> _logger;
 
-    public ReportHandler(ChoreCache cache, IOptions<AppSettings> settings, ILogger<ReportHandler> logger)
+    public ReportHandler(
+        ChoreCache cache,
+        CalendarResolver resolver,
+        IOptions<AppSettings> settings,
+        ILogger<ReportHandler> logger)
     {
         _cache = cache;
+        _resolver = resolver;
         _calDavSettings = settings.Value.CalDav;
         _logger = logger;
     }
@@ -59,7 +67,7 @@ public sealed class ReportHandler
     }
 
     /// <summary>
-    /// calendar-query: returns all VTODO resources in the collection.
+    /// calendar-query: returns all VTODO resources in the targeted calendar collection.
     /// Apple Calendar uses this for initial sync and periodic full refreshes.
     /// </summary>
     private async Task HandleQuery(HttpContext ctx, XDocument doc)
@@ -67,13 +75,14 @@ public sealed class ReportHandler
         var requestedProps = DavXmlReader.GetRequestedProperties(doc);
         var writer = new DavXmlWriter();
         var user = _calDavSettings.Username;
-        var chores = _cache.GetAllChores();
+        var slug = ResolveCalendarSlug(ctx);
+        var chores = _resolver.GetChoresForCalendar(slug);
 
-        _logger.LogDebug("calendar-query: returning {Count} resources", chores.Count);
+        _logger.LogDebug("calendar-query [{Slug}]: returning {Count} resources", slug, chores.Count);
 
         foreach (var cached in chores)
         {
-            var href = $"/caldav/calendars/{user}/tasks/donetick-{cached.Chore.Id}.ics";
+            var href = $"/caldav/calendars/{user}/{slug}/donetick-{cached.Chore.Id}.ics";
             writer.AddResponse(href, BuildResourceProps(requestedProps, cached));
         }
 
@@ -95,7 +104,8 @@ public sealed class ReportHandler
         foreach (var href in hrefs)
         {
             // Apple sometimes includes the collection href — skip it
-            if (href.TrimEnd('/').EndsWith("/tasks", StringComparison.OrdinalIgnoreCase))
+            var slug = PathHelper.ExtractCalendarSlug(href, _calDavSettings.Username);
+            if (slug != null && href.TrimEnd('/').EndsWith($"/{slug}", StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var id = PathHelper.ExtractChoreId(href);
@@ -117,26 +127,28 @@ public sealed class ReportHandler
     /// <summary>
     /// sync-collection: returns all resources with a sync-token.
     /// Since we don't track per-client sync state, we always return the full set
-    /// and use the CTag as the sync-token. Apple will use this to detect changes.
+    /// and use the per-calendar CTag as the sync-token. Apple will use this to detect changes.
     /// </summary>
     private async Task HandleSyncCollection(HttpContext ctx, XDocument doc)
     {
         var requestedProps = DavXmlReader.GetRequestedProperties(doc);
         var writer = new DavXmlWriter();
         var user = _calDavSettings.Username;
-        var chores = _cache.GetAllChores();
+        var slug = ResolveCalendarSlug(ctx);
+        var chores = _resolver.GetChoresForCalendar(slug);
+        var ctag = _resolver.GetCTagForCalendar(slug);
 
-        _logger.LogDebug("sync-collection: returning {Count} resources with sync-token {CTag}",
-            chores.Count, _cache.CTag);
+        _logger.LogDebug("sync-collection [{Slug}]: returning {Count} resources with sync-token {CTag}",
+            slug, chores.Count, ctag);
 
         foreach (var cached in chores)
         {
-            var href = $"/caldav/calendars/{user}/tasks/donetick-{cached.Chore.Id}.ics";
+            var href = $"/caldav/calendars/{user}/{slug}/donetick-{cached.Chore.Id}.ics";
             writer.AddResponse(href, BuildResourceProps(requestedProps, cached));
         }
 
         // Include sync-token in the response so Apple knows the current state
-        writer.AddSyncToken(_cache.CTag);
+        writer.AddSyncToken(ctag);
         await writer.WriteResponseAsync(ctx);
     }
 
@@ -156,5 +168,15 @@ public sealed class ReportHandler
         }
 
         return props;
+    }
+
+    /// <summary>
+    /// Extracts the calendar slug from the request URL, falling back to the default.
+    /// </summary>
+    private string ResolveCalendarSlug(HttpContext ctx)
+    {
+        var path = ctx.Request.Path.Value ?? "";
+        return PathHelper.ExtractCalendarSlug(path, _calDavSettings.Username)
+               ?? CalendarResolver.DefaultSlug;
     }
 }

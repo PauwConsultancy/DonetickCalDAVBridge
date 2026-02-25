@@ -161,8 +161,9 @@ public class ClientTrackerTests
 
         tracker.RecordRequest("curl/8.7.1", "GET");
 
-        // With a zero window, everything should be expired
-        var clients = tracker.GetActiveClients(TimeSpan.Zero);
+        // With a negative window the cutoff is in the future, so everything is expired.
+        // We use -1ms instead of Zero to avoid a race where LastSeen == cutoff.
+        var clients = tracker.GetActiveClients(TimeSpan.FromMilliseconds(-1));
         clients.Should().BeEmpty();
     }
 

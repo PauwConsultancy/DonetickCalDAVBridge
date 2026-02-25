@@ -15,17 +15,20 @@ namespace DonetickCalDav.CalDav.Handlers;
 public sealed class PutHandler
 {
     private readonly ChoreCache _cache;
+    private readonly CalendarResolver _resolver;
     private readonly IDonetickApiClient _client;
     private readonly CalDavSettings _calDavSettings;
     private readonly ILogger<PutHandler> _logger;
 
     public PutHandler(
         ChoreCache cache,
+        CalendarResolver resolver,
         IDonetickApiClient client,
         IOptions<AppSettings> settings,
         ILogger<PutHandler> logger)
     {
         _cache = cache;
+        _resolver = resolver;
         _client = client;
         _calDavSettings = settings.Value.CalDav;
         _logger = logger;
@@ -153,8 +156,11 @@ public sealed class PutHandler
         }
 
         context.Response.StatusCode = 201;
+        var slug = _resolver.GroupByLabel
+            ? CalendarResolver.GetSlugForChore(created)
+            : CalendarResolver.DefaultSlug;
         context.Response.Headers["Location"] =
-            $"/caldav/calendars/{_calDavSettings.Username}/tasks/donetick-{created.Id}.ics";
+            $"/caldav/calendars/{_calDavSettings.Username}/{slug}/donetick-{created.Id}.ics";
         SetETagHeader(context, created.Id);
         _logger.LogInformation("PUT create: chore {Id} created — responded 201", created.Id);
     }

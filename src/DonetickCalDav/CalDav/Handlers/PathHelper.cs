@@ -50,9 +50,28 @@ public static partial class PathHelper
         return uuid != null ? cache.GetIdByUid(uuid) : null;
     }
 
+    /// <summary>
+    /// Extracts the calendar collection slug from a CalDAV path.
+    /// "/caldav/calendars/user/werk/donetick-1.ics" → "werk"
+    /// "/caldav/calendars/user/tasks/" → "tasks"
+    /// "/caldav/principals/user/" → null (not a calendar path)
+    /// </summary>
+    public static string? ExtractCalendarSlug(string path, string username)
+    {
+        var match = CalendarSlugPattern(username).Match(path);
+        return match.Success ? match.Groups[1].Value.ToLowerInvariant() : null;
+    }
+
     [GeneratedRegex(@"donetick-(\d+)\.ics$", RegexOptions.Compiled)]
     private static partial Regex ChoreIdPattern();
 
     [GeneratedRegex(@"/([0-9A-Fa-f-]{36})\.ics$", RegexOptions.Compiled)]
     private static partial Regex UuidFilenamePattern();
+
+    /// <summary>
+    /// Builds a regex to extract the calendar slug from a CalDAV path.
+    /// The slug is the path segment immediately after /caldav/calendars/{username}/.
+    /// </summary>
+    private static Regex CalendarSlugPattern(string username) =>
+        new($@"/caldav/calendars/{Regex.Escape(username)}/([^/]+)", RegexOptions.IgnoreCase);
 }

@@ -11,7 +11,7 @@ If you have improvements please share them.
 ## Features
 
 - **Read & write** — view, create, update, complete, and delete tasks from your CalDAV client
-- **Recurring tasks** — Donetick recurrence patterns are mapped to iCalendar RRULE
+- **Labels as lists** — optionally split Donetick labels into separate CalDAV calendars (see [Group by Label](#group-by-label))
 - **Background sync** — periodically polls the Donetick API and keeps an in-memory cache
 - **Apple-compatible** — follows Apple's CalDAV discovery flow (`.well-known`, PROPFIND at multiple depths)
 - **Optional HTTPS** — built-in TLS support for Apple Calendar/Reminders (requires HTTPS for Basic Auth)
@@ -76,6 +76,57 @@ docker compose up -d
 
    Your Donetick tasks will appear in the **Reminders** app. Tasks with a due date will also show up in **Calendar.app** automatically.
 
+## Group by Label
+
+By default, all Donetick tasks appear in a single CalDAV list. If you use labels in Donetick to organise your tasks, you can enable **Group by Label** mode to create a separate list per label in Apple Reminders.
+
+### Why separate lists instead of tags?
+
+Apple Reminders supports tags (hashtags) natively, but **only for iCloud-based lists**. For third-party CalDAV accounts, Apple ignores both the standard iCalendar `CATEGORIES` property and the proprietary `X-APPLE-HASHTAGS` extension. This is an Apple limitation that affects all CalDAV servers, not just this bridge.
+
+Splitting tasks into separate CalDAV calendar collections per label is the only reliable way to visually group tasks by label in Apple Reminders and Calendar.app.
+
+> **Note:** The bridge still emits both `CATEGORIES` and `X-APPLE-HASHTAGS` in the VTODO output. Non-Apple clients like Thunderbird, DAVx5, and Tasks.org do render these as tags/categories.
+
+### How it works
+
+| Situation | List |
+|-----------|------|
+| Task with **exactly 1 label** | Appears in that label's list (e.g. "Werk") |
+| Task with **no labels** | Appears in the default list |
+| Task with **2+ labels** | Appears in the default list (to avoid duplicates) |
+
+Tasks never appear in more than one list, so there are no confusing duplicates.
+
+### Configuration
+
+Enable with two environment variables:
+
+```yaml
+environment:
+  - CalDav__GroupByLabel=true
+  - CalDav__DefaultCalendarName=Algemeen   # optional, default: "Algemeen"
+```
+
+- `GroupByLabel` — set to `true` to enable separate lists per label
+- `DefaultCalendarName` — display name for the catch-all list (tasks with 0 or 2+ labels)
+
+When `GroupByLabel` is `false` (default), all tasks appear in a single list named after `CalDav__CalendarName`.
+
+### Label to list mapping
+
+Each label becomes a CalDAV calendar with:
+- **Slug** — URL-safe version of the label name (e.g. "Privé taken" → `prive-taken`)
+- **Display name** — the original label name as shown in Apple Reminders
+- **Colour** — automatically generated per label (deterministic, based on label name)
+
+The default list keeps the configured `CalDav__CalendarColor`.
+
+### Limitations
+
+- **One-way** — labels are read from Donetick; you cannot assign labels from Apple Reminders (the Donetick eAPI does not support label management)
+- **New tasks** — tasks created via Apple Reminders always appear in the default list, because the eAPI cannot set labels on create
+
 ## HTTPS Setup
 
 Apple Calendar and Reminders **will not send Basic Auth credentials over plain HTTP**. You must enable HTTPS using one of the methods below.
@@ -138,8 +189,10 @@ All settings are configured via environment variables:
 | `Donetick__PollIntervalSeconds` | `30`                   | How often to poll Donetick for changes   |
 | `CalDav__Username`              | `user`                 | Username for CalDAV authentication       |
 | `CalDav__Password`              | `pass`                 | Password for CalDAV authentication       |
-| `CalDav__CalendarName`          | `Donetick Tasks`       | Display name of the calendar             |
+| `CalDav__CalendarName`          | `DonetickTasks`        | Display name of the calendar             |
 | `CalDav__CalendarColor`         | `#4A90D9FF`            | Calendar color (RGBA hex)                |
+| `CalDav__GroupByLabel`          | `false`                | Split labels into separate lists         |
+| `CalDav__DefaultCalendarName`   | `Algemeen`             | Default list name (when GroupByLabel=true)|
 | `CalDav__ListenPort`            | `5232`                 | Port the bridge listens on               |
 | `CalDav__Tls__CertPath`         | *(none)*               | PEM certificate file path (enables HTTPS)|
 | `CalDav__Tls__KeyPath`          | *(none)*               | PEM private key file path                |
@@ -223,6 +276,7 @@ src/DonetickCalDav/
     ├── Xml/             # DAV/CalDAV XML reading and writing
     ├── VTodo/           # VTODO ↔ Donetick mapping (status, priority, recurrence)
     ├── Handlers/        # One handler per HTTP method (PROPFIND, REPORT, GET, PUT, DELETE, etc.)
+    │   └── CalendarResolver.cs  # Virtual calendar logic for GroupByLabel mode
     └── Middleware/       # Request routing and Basic Auth
 ```
 
@@ -231,6 +285,15 @@ src/DonetickCalDav/
 - **In-memory cache only** — there is no persistent storage; the cache rebuilds on restart
 - **External API constraints** — Donetick's eAPI only supports setting name, description, and due date on create/update. Priority, labels, and recurrence must be managed in Donetick directly.
 - **Single-user** — designed for a single Donetick account; all CalDAV clients share the same task list
+- **Apple tag limitation** — Apple Reminders does not display `CATEGORIES` or `X-APPLE-HASHTAGS` from CalDAV accounts (only iCloud). The `GroupByLabel` feature works around this by using separate calendar collections.
+
+## Backlog
+
+Planned features and improvements (contributions welcome):
+
+- [ ] **All-day events** — option to emit tasks without a specific time (DATE instead of DATE-TIME), so they appear as all-day items in Calendar.app instead of at a specific hour
+- [ ] **Preserve original scheduled time** — option to keep the originally configured due time on recurring tasks after completion. Currently, when you complete a recurring task (e.g. "Shave" scheduled daily at 08:00) at a different time (e.g. 10:00), Donetick advances the next due date using the completion time, causing all future occurrences to show at 10:00 instead of the intended 08:00
+- [ ] **Unraid template** — create an Unraid Community Applications XML template for easy installation via the Unraid app store
 
 ## License
 

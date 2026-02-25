@@ -12,18 +12,24 @@ namespace DonetickCalDav.CalDav.Handlers;
 ///   /caldav/                              → service root (current-user-principal)
 ///   /caldav/principals/{user}/            → principal (calendar-home-set)
 ///   /caldav/calendars/{user}/             → calendar home (lists collections)
-///   /caldav/calendars/{user}/tasks/       → calendar collection (VTODO metadata)
-///   /caldav/calendars/{user}/tasks/*.ics  → individual resource
+///   /caldav/calendars/{user}/{slug}/      → calendar collection (VTODO metadata)
+///   /caldav/calendars/{user}/{slug}/*.ics → individual resource
 /// </summary>
 public sealed class PropFindHandler
 {
     private readonly ChoreCache _cache;
+    private readonly CalendarResolver _resolver;
     private readonly CalDavSettings _calDavSettings;
     private readonly ILogger<PropFindHandler> _logger;
 
-    public PropFindHandler(ChoreCache cache, IOptions<AppSettings> settings, ILogger<PropFindHandler> logger)
+    public PropFindHandler(
+        ChoreCache cache,
+        CalendarResolver resolver,
+        IOptions<AppSettings> settings,
+        ILogger<PropFindHandler> logger)
     {
         _cache = cache;
+        _resolver = resolver;
         _calDavSettings = settings.Value.CalDav;
         _logger = logger;
     }
@@ -57,9 +63,12 @@ public sealed class PropFindHandler
             return;
         }
 
-        if (path.Equals($"/caldav/calendars/{user}/tasks", StringComparison.OrdinalIgnoreCase))
+        // Calendar collection: match any valid slug (e.g. /tasks, /werk, /dagelijks)
+        var slug = PathHelper.ExtractCalendarSlug(path, user);
+        if (slug != null && _resolver.IsValidCalendar(slug) &&
+            path.Equals($"/caldav/calendars/{user}/{slug}", StringComparison.OrdinalIgnoreCase))
         {
-            await RespondCalendarCollection(context, requestedProps, user, depth);
+            await RespondCalendarCollection(context, requestedProps, user, depth, slug);
             return;
         }
 
@@ -144,11 +153,16 @@ public sealed class PropFindHandler
 
         writer.AddResponse(basePath, homeFound, NullIfEmpty(homeNotFound));
 
-        // Depth:1 — also list the single tasks calendar collection
+        // Depth:1 — list all calendar collections (dynamic when GroupByLabel is enabled)
         if (depth == "1")
         {
-            var (collFound, collNotFound) = BuildCollectionProperties(props, user);
-            writer.AddResponse($"/caldav/calendars/{user}/tasks/", collFound, NullIfEmpty(collNotFound));
+            var calendars = _resolver.GetCalendars();
+            for (var i = 0; i < calendars.Count; i++)
+            {
+                var cal = calendars[i];
+                var (collFound, collNotFound) = BuildCollectionProperties(props, user, cal, i + 1);
+                writer.AddResponse($"/caldav/calendars/{user}/{cal.Slug}/", collFound, NullIfEmpty(collNotFound));
+            }
         }
 
         await writer.WriteResponseAsync(ctx);
@@ -156,19 +170,32 @@ public sealed class PropFindHandler
 
     // ── Level 4: Calendar Collection ───────────────────────────────────────────
 
-    private async Task RespondCalendarCollection(HttpContext ctx, List<XName> props, string user, string depth)
+    private async Task RespondCalendarCollection(
+        HttpContext ctx, List<XName> props, string user, string depth, string slug)
     {
         var writer = new DavXmlWriter();
 
-        var (collFound, collNotFound) = BuildCollectionProperties(props, user);
-        writer.AddResponse($"/caldav/calendars/{user}/tasks/", collFound, NullIfEmpty(collNotFound));
+        // Find the virtual calendar for this slug (needed for display name, color, ctag)
+        var calendars = _resolver.GetCalendars();
+        var calIndex = calendars.FindIndex(c => c.Slug == slug);
+        var cal = calIndex >= 0 ? calendars[calIndex] : null;
 
-        // Depth:1 — enumerate all individual VTODO resources
+        if (cal == null)
+        {
+            ctx.Response.StatusCode = 404;
+            return;
+        }
+
+        var (collFound, collNotFound) = BuildCollectionProperties(props, user, cal, calIndex + 1);
+        writer.AddResponse($"/caldav/calendars/{user}/{slug}/", collFound, NullIfEmpty(collNotFound));
+
+        // Depth:1 — enumerate individual VTODO resources in this calendar
         if (depth == "1")
         {
-            foreach (var cached in _cache.GetAllChores())
+            var chores = _resolver.GetChoresForCalendar(slug);
+            foreach (var cached in chores)
             {
-                var href = $"/caldav/calendars/{user}/tasks/donetick-{cached.Chore.Id}.ics";
+                var href = $"/caldav/calendars/{user}/{slug}/donetick-{cached.Chore.Id}.ics";
                 writer.AddResponse(href, BuildResourceProperties(props, cached));
             }
         }
@@ -187,31 +214,36 @@ public sealed class PropFindHandler
             return;
         }
 
+        // Determine which calendar this chore belongs to
+        var slug = _resolver.GroupByLabel
+            ? CalendarResolver.GetSlugForChore(cached.Chore)
+            : CalendarResolver.DefaultSlug;
+
         var writer = new DavXmlWriter();
         writer.AddResponse(
-            $"/caldav/calendars/{user}/tasks/donetick-{choreId}.ics",
+            $"/caldav/calendars/{user}/{slug}/donetick-{choreId}.ics",
             BuildResourceProperties(props, cached));
         await writer.WriteResponseAsync(ctx);
     }
 
     // ── Property Builders ──────────────────────────────────────────────────────
 
-    /// <summary>Builds the full set of properties for the VTODO calendar collection.</summary>
+    /// <summary>Builds the full set of properties for a calendar collection.</summary>
     private (Dictionary<XName, object?> Found, List<XName> NotFound) BuildCollectionProperties(
-        List<XName> props, string user)
+        List<XName> props, string user, VirtualCalendar cal, int order)
     {
         return ResolveProperties(props, name => name switch
         {
             _ when name == DavNamespaces.D + "resourcetype"
                 => (object)new XElement[] { new(DavNamespaces.D + "collection"), new(DavNamespaces.C + "calendar") },
             _ when name == DavNamespaces.D + "displayname"
-                => _calDavSettings.CalendarName,
+                => cal.DisplayName,
             _ when name == DavNamespaces.C + "supported-calendar-component-set"
                 => new XElement(DavNamespaces.C + "comp", new XAttribute("name", "VTODO")),
             _ when name == DavNamespaces.CS + "getctag"
-                => _cache.CTag,
+                => cal.CTag,
             _ when name == DavNamespaces.D + "sync-token"
-                => $"http://donetick-caldav/sync/{_cache.CTag}",
+                => $"http://donetick-caldav/sync/{cal.CTag}",
             _ when name == DavNamespaces.D + "current-user-privilege-set"
                 => (object)new XElement[]
                 {
@@ -219,8 +251,8 @@ public sealed class PropFindHandler
                     new(DavNamespaces.D + "privilege", new XElement(DavNamespaces.D + "write")),
                     new(DavNamespaces.D + "privilege", new XElement(DavNamespaces.D + "read-current-user-privilege-set")),
                 },
-            _ when name == DavNamespaces.Apple + "calendar-color"     => _calDavSettings.CalendarColor,
-            _ when name == DavNamespaces.Apple + "calendar-order"     => "1",
+            _ when name == DavNamespaces.Apple + "calendar-color"     => cal.Color,
+            _ when name == DavNamespaces.Apple + "calendar-order"     => order.ToString(),
             _ when name == DavNamespaces.C + "calendar-description"   => "Tasks from Donetick",
             _ when name == DavNamespaces.D + "supported-report-set"   => SupportedReportSet(),
             _ when name == DavNamespaces.D + "current-user-principal" => Href($"/caldav/principals/{user}/"),
