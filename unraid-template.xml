@@ -140,12 +140,12 @@
   <Config
     Name="Default Calendar Name"
     Target="CalDav__DefaultCalendarName"
-    Default="Algemeen"
+    Default="General"
     Description="Display name for the default/catch-all list when Group by Label is enabled. Tasks with zero or multiple labels appear here."
     Type="Variable"
     Display="advanced"
     Required="false"
-    Mask="false">Algemeen</Config>
+    Mask="false">General</Config>
 
   <Config
     Name="All-Day Events"

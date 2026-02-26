@@ -13,7 +13,7 @@ public class CalendarResolverTests
 {
     private readonly ChoreCache _cache = new(NullLogger<ChoreCache>.Instance);
 
-    private CalendarResolver CreateResolver(bool groupByLabel = false, string defaultCalendarName = "Algemeen")
+    private CalendarResolver CreateResolver(bool groupByLabel = false, string defaultCalendarName = "General")
     {
         var settings = new AppSettings
         {
@@ -33,7 +33,7 @@ public class CalendarResolverTests
 
     [Theory]
     [InlineData("Work", "work")]
-    [InlineData("Privé taken", "prive-taken")]
+    [InlineData("Private tasks", "private-tasks")]
     [InlineData("Work & Life", "work-life")] // & stripped, double dash collapsed to single
     [InlineData("  Spaces  ", "spaces")]
     [InlineData("UPPERCASE", "uppercase")]
@@ -150,25 +150,25 @@ public class CalendarResolverTests
 
         var calendars = resolver.GetCalendars();
 
-        // Default + "Huishouden" + "Werk" (sorted alphabetically)
+        // Default + "Household" + "Work" (sorted alphabetically)
         calendars.Should().HaveCount(3);
         calendars[0].Slug.Should().Be("tasks");
-        calendars[0].DisplayName.Should().Be("Algemeen");
-        calendars[1].Slug.Should().Be("huishouden");
-        calendars[1].DisplayName.Should().Be("Huishouden");
-        calendars[2].Slug.Should().Be("werk");
-        calendars[2].DisplayName.Should().Be("Werk");
+        calendars[0].DisplayName.Should().Be("General");
+        calendars[1].Slug.Should().Be("household");
+        calendars[1].DisplayName.Should().Be("Household");
+        calendars[2].Slug.Should().Be("work");
+        calendars[2].DisplayName.Should().Be("Work");
     }
 
     [Fact]
     public void GetCalendars_GroupByLabelTrue_DefaultCalendarUsesConfiguredName()
     {
         SeedChoresWithLabels();
-        var resolver = CreateResolver(groupByLabel: true, defaultCalendarName: "Overig");
+        var resolver = CreateResolver(groupByLabel: true, defaultCalendarName: "Other");
 
         var calendars = resolver.GetCalendars();
 
-        calendars[0].DisplayName.Should().Be("Overig");
+        calendars[0].DisplayName.Should().Be("Other");
     }
 
     [Fact]
@@ -207,13 +207,13 @@ public class CalendarResolverTests
         SeedChoresWithLabels();
         var resolver = CreateResolver(groupByLabel: true);
 
-        var werkChores = resolver.GetChoresForCalendar("werk");
-        werkChores.Should().HaveCount(1);
-        werkChores[0].Chore.Id.Should().Be(2);
+        var workChores = resolver.GetChoresForCalendar("work");
+        workChores.Should().HaveCount(1);
+        workChores[0].Chore.Id.Should().Be(2);
 
-        var huishoudChores = resolver.GetChoresForCalendar("huishouden");
-        huishoudChores.Should().HaveCount(1);
-        huishoudChores[0].Chore.Id.Should().Be(3);
+        var householdChores = resolver.GetChoresForCalendar("household");
+        householdChores.Should().HaveCount(1);
+        householdChores[0].Chore.Id.Should().Be(3);
     }
 
     [Fact]
@@ -240,7 +240,7 @@ public class CalendarResolverTests
         SeedChoresWithLabels();
         var resolver = CreateResolver(groupByLabel: true);
 
-        resolver.IsValidCalendar("werk").Should().BeTrue();
+        resolver.IsValidCalendar("work").Should().BeTrue();
     }
 
     [Fact]
@@ -259,7 +259,7 @@ public class CalendarResolverTests
         var resolver = CreateResolver(groupByLabel: false);
 
         resolver.IsValidCalendar("tasks").Should().BeTrue();
-        resolver.IsValidCalendar("werk").Should().BeFalse();
+        resolver.IsValidCalendar("work").Should().BeFalse();
     }
 
     // ── CTag per calendar ───────────────────────────────────────────────────
@@ -283,16 +283,16 @@ public class CalendarResolverTests
         SeedChoresWithLabels();
         var resolver = CreateResolver(groupByLabel: true);
 
-        var werkCTag1 = resolver.GetCTagForCalendar("werk");
+        var workCTag1 = resolver.GetCTagForCalendar("work");
 
         // Modify a chore in the default calendar (id 1, no labels)
         var modified = TestChoreFactory.Simple(1, "Modified");
         modified.UpdatedAt = DateTime.UtcNow.AddHours(1);
         _cache.UpsertChore(modified);
 
-        var werkCTag2 = resolver.GetCTagForCalendar("werk");
+        var workCTag2 = resolver.GetCTagForCalendar("work");
 
-        werkCTag1.Should().Be(werkCTag2,
+        workCTag1.Should().Be(workCTag2,
             "changing a chore in another calendar should not affect this calendar's CTag");
     }
 
@@ -302,17 +302,17 @@ public class CalendarResolverTests
         SeedChoresWithLabels();
         var resolver = CreateResolver(groupByLabel: true);
 
-        var werkCTag1 = resolver.GetCTagForCalendar("werk");
+        var workCTag1 = resolver.GetCTagForCalendar("work");
 
-        // Modify the chore in "Werk" calendar (id 2)
-        var modified = TestChoreFactory.Simple(2, "Modified Werk");
-        modified.LabelsV2 = [new DonetickLabel { Id = 1, Name = "Werk" }];
+        // Modify the chore in "Work" calendar (id 2)
+        var modified = TestChoreFactory.Simple(2, "Modified Work");
+        modified.LabelsV2 = [new DonetickLabel { Id = 1, Name = "Work" }];
         modified.UpdatedAt = DateTime.UtcNow.AddHours(1);
         _cache.UpsertChore(modified);
 
-        var werkCTag2 = resolver.GetCTagForCalendar("werk");
+        var workCTag2 = resolver.GetCTagForCalendar("work");
 
-        werkCTag1.Should().NotBe(werkCTag2,
+        workCTag1.Should().NotBe(workCTag2,
             "changing a chore in this calendar should update the CTag");
     }
 
@@ -327,31 +327,31 @@ public class CalendarResolverTests
 
         calendars.Should().HaveCount(1);
         calendars[0].Slug.Should().Be("tasks");
-        calendars[0].DisplayName.Should().Be("Algemeen");
+        calendars[0].DisplayName.Should().Be("General");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Seeds the cache with four chores covering all label scenarios:
-    ///   ID 1: no labels      → default
-    ///   ID 2: "Werk"         → werk
-    ///   ID 3: "Huishouden"   → huishouden
-    ///   ID 4: "Werk"+"Prive" → default (multiple labels)
+    ///   ID 1: no labels          → default
+    ///   ID 2: "Work"             → work
+    ///   ID 3: "Household"        → household
+    ///   ID 4: "Work"+"Personal"  → default (multiple labels)
     /// </summary>
     private void SeedChoresWithLabels()
     {
         var chore1 = TestChoreFactory.Simple(1, "No labels");
         chore1.LabelsV2 = null;
 
-        var chore2 = TestChoreFactory.Simple(2, "Werk task");
-        chore2.LabelsV2 = [new DonetickLabel { Id = 1, Name = "Werk" }];
+        var chore2 = TestChoreFactory.Simple(2, "Work task");
+        chore2.LabelsV2 = [new DonetickLabel { Id = 1, Name = "Work" }];
 
-        var chore3 = TestChoreFactory.Simple(3, "Huishouden task");
-        chore3.LabelsV2 = [new DonetickLabel { Id = 2, Name = "Huishouden" }];
+        var chore3 = TestChoreFactory.Simple(3, "Household task");
+        chore3.LabelsV2 = [new DonetickLabel { Id = 2, Name = "Household" }];
 
         var chore4 = TestChoreFactory.Simple(4, "Multi-label task");
-        chore4.LabelsV2 = [new DonetickLabel { Id = 1, Name = "Werk" }, new DonetickLabel { Id = 3, Name = "Prive" }];
+        chore4.LabelsV2 = [new DonetickLabel { Id = 1, Name = "Work" }, new DonetickLabel { Id = 3, Name = "Personal" }];
 
         _cache.UpdateChores([chore1, chore2, chore3, chore4]);
     }

@@ -100,7 +100,7 @@ Splitting tasks into separate CalDAV calendar collections per label is the only 
 
 | Situation | List |
 |-----------|------|
-| Task with **exactly 1 label** | Appears in that label's list (e.g. "Werk") |
+| Task with **exactly 1 label** | Appears in that label's list (e.g. "Work") |
 | Task with **no labels** | Appears in the default list |
 | Task with **2+ labels** | Appears in the default list (to avoid duplicates) |
 
@@ -113,7 +113,7 @@ Enable with two environment variables:
 ```yaml
 environment:
   - CalDav__GroupByLabel=true
-  - CalDav__DefaultCalendarName=Algemeen   # optional, default: "Algemeen"
+  - CalDav__DefaultCalendarName=General     # optional, default: "General"
 ```
 
 - `GroupByLabel` — set to `true` to enable separate lists per label
@@ -124,7 +124,7 @@ When `GroupByLabel` is `false` (default), all tasks appear in a single list name
 ### Label to list mapping
 
 Each label becomes a CalDAV calendar with:
-- **Slug** — URL-safe version of the label name (e.g. "Privé taken" → `prive-taken`)
+- **Slug** — URL-safe version of the label name (e.g. "Private tasks" → `private-tasks`)
 - **Display name** — the original label name as shown in Apple Reminders
 - **Colour** — automatically generated per label (deterministic, based on label name)
 
@@ -133,7 +133,8 @@ The default list keeps the configured `CalDav__CalendarColor`.
 ### Limitations
 
 - **One-way** — labels are read from Donetick; you cannot assign labels from Apple Reminders (the Donetick eAPI does not support label management)
-- **New tasks** — tasks created via Apple Reminders always appear in the default list, because the eAPI cannot set labels on create
+- **New tasks land in default list** — creating a task inside a label list (e.g. "Work") in Apple Reminders will create it in Donetick without that label, because the eAPI cannot set labels on create. After the next sync the task moves to the default list. Create tasks in Donetick to assign labels.
+- **Do not drag tasks between lists** — Apple Reminders handles this as delete + create, which strips all metadata (labels, recurrence, priority). The task reappears as a bare item in the default list. Manage labels in Donetick instead.
 
 ## All-Day Events
 
@@ -235,7 +236,7 @@ All settings are configured via environment variables:
 | `CalDav__CalendarName`          | `DonetickTasks`        | Display name of the calendar             |
 | `CalDav__CalendarColor`         | `#4A90D9FF`            | Calendar color (RGBA hex)                |
 | `CalDav__GroupByLabel`          | `false`                | Split labels into separate lists         |
-| `CalDav__DefaultCalendarName`   | `Algemeen`             | Default list name (when GroupByLabel=true)|
+| `CalDav__DefaultCalendarName`   | `General`              | Default list name (when GroupByLabel=true)|
 | `CalDav__AllDayEvents`          | `false`                | Show tasks as all-day items (no time)    |
 | `CalDav__PreserveScheduledTime` | `false`                | Keep original scheduled time on recurring|
 | `CalDav__ListenPort`            | `5232`                 | Port the bridge listens on               |
@@ -329,6 +330,7 @@ src/DonetickCalDav/
 
 - **In-memory cache only** — there is no persistent storage; the cache rebuilds on restart
 - **External API constraints** — Donetick's eAPI only supports setting name, description, and due date on create/update. Priority, labels, and recurrence must be managed in Donetick directly.
+- **Moving tasks between lists** — when you drag a task to a different list in Apple Reminders, the app deletes the original and creates a new one. Because the eAPI cannot set labels, priority, or recurrence on create, the new task loses all metadata and falls back to the default list. **Do not move tasks between lists in Apple Reminders** — manage labels in Donetick instead. This is a Donetick eAPI limitation, not a bridge limitation; resolving it requires extending the Donetick API with label and recurrence support on the create/update endpoints.
 - **Single-user** — designed for a single Donetick account; all CalDAV clients share the same task list
 - **Apple tag limitation** — Apple Reminders does not display `CATEGORIES` or `X-APPLE-HASHTAGS` from CalDAV accounts (only iCloud). The `GroupByLabel` feature works around this by using separate calendar collections.
 

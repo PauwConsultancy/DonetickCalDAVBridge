@@ -12,7 +12,7 @@ namespace DonetickCalDav.CalDav.Handlers;
 /// <summary>
 /// Snapshot of a virtual CalDAV calendar derived from Donetick labels.
 /// </summary>
-/// <param name="Slug">URL-safe identifier used in CalDAV paths (e.g. "werk", "tasks").</param>
+/// <param name="Slug">URL-safe identifier used in CalDAV paths (e.g. "work", "tasks").</param>
 /// <param name="DisplayName">Human-readable name shown in Apple Reminders / Calendar.</param>
 /// <param name="Color">Calendar colour in Apple hex format (RRGGBBAA).</param>
 /// <param name="CTag">Collection-level change tag — changes when any resource in this calendar changes.</param>
@@ -172,7 +172,7 @@ public sealed partial class CalendarResolver
 
     /// <summary>
     /// Converts a label name to a URL-safe slug.
-    /// "Privé taken" → "prive-taken", "Work &amp; Life" → "work--life".
+    /// "Private tasks" → "private-tasks", "Work &amp; Life" → "work--life".
     /// </summary>
     public static string ToSlug(string labelName)
     {

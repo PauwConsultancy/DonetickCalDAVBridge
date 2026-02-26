@@ -72,7 +72,7 @@ public sealed class CalDavSettings
     /// Tasks with zero or multiple labels appear here.
     /// Ignored when GroupByLabel is false (CalendarName is used instead).
     /// </summary>
-    public string DefaultCalendarName { get; set; } = "Algemeen";
+    public string DefaultCalendarName { get; set; } = "General";
 
     /// <summary>
     /// When true, emits DUE and DTSTART with VALUE=DATE (date only, no time component).

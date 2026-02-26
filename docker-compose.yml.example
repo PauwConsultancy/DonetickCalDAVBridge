@@ -17,7 +17,7 @@ services:
       - CalDav__ListenPort=5232
       # -- Optional: feature flags --
       # - CalDav__GroupByLabel=true               # Separate list per Donetick label
-      # - CalDav__DefaultCalendarName=Algemeen    # Catch-all list name (GroupByLabel)
+      # - CalDav__DefaultCalendarName=General      # Catch-all list name (GroupByLabel)
       # - CalDav__AllDayEvents=true               # Tasks as all-day items (no time)
       # - CalDav__PreserveScheduledTime=true      # Keep original scheduled time on recurring
       # -- Optional: HTTPS (required for Apple Calendar/Reminders) --
