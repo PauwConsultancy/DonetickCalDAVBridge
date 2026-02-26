@@ -1,3 +1,5 @@
+using DonetickCalDav.Donetick.Models;
+
 namespace DonetickCalDav.CalDav.VTodo;
 
 /// <summary>
@@ -5,7 +7,6 @@ namespace DonetickCalDav.CalDav.VTodo;
 /// and iCalendar VTODO STATUS strings (RFC 5545 Section 3.8.1.11).
 /// </summary>
 /// <remarks>
-/// Donetick statuses: 0 = NoStatus, 1 = InProgress, 2 = Paused, 3 = PendingApproval.
 /// VTODO statuses: NEEDS-ACTION, IN-PROCESS, COMPLETED, CANCELLED.
 /// Note: iCalendar has no "Paused" concept; we map it to NEEDS-ACTION.
 /// </remarks>
@@ -18,9 +19,9 @@ public static class StatusMapper
 
         return donetickStatus switch
         {
-            1 => "IN-PROCESS",     // InProgress
-            3 => "IN-PROCESS",     // PendingApproval — closest match
-            _ => "NEEDS-ACTION",   // NoStatus (0) and Paused (2)
+            ChoreStatus.InProgress       => "IN-PROCESS",
+            ChoreStatus.PendingApproval  => "IN-PROCESS",     // Closest match
+            _ => "NEEDS-ACTION",   // NoStatus and Paused
         };
     }
 
@@ -32,11 +33,11 @@ public static class StatusMapper
     {
         return vtodoStatus?.ToUpperInvariant() switch
         {
-            "COMPLETED"    => (null, true),   // Trigger the /complete endpoint
-            "IN-PROCESS"   => (1, false),     // InProgress
-            "CANCELLED"    => (null, false),  // Deactivate (if API supports it)
-            "NEEDS-ACTION" => (0, false),     // NoStatus
-            _              => (0, false),
+            "COMPLETED"    => (null, true),
+            "IN-PROCESS"   => (ChoreStatus.InProgress, false),
+            "CANCELLED"    => (null, false),
+            "NEEDS-ACTION" => (ChoreStatus.NoStatus, false),
+            _              => (ChoreStatus.NoStatus, false),
         };
     }
 }

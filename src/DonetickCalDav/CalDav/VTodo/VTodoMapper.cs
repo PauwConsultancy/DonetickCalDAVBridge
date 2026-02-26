@@ -211,7 +211,7 @@ public static class VTodoMapper
     private static void ApplyPercentComplete(Todo todo, DonetickChore chore)
     {
         // Only set percent-complete for InProgress status as a visual hint
-        if (chore.Status == 1)
+        if (chore.Status == ChoreStatus.InProgress)
             todo.PercentComplete = 50;
     }
 

@@ -1,3 +1,5 @@
+using DonetickCalDav.Donetick.Models;
+
 namespace DonetickCalDav.CalDav.VTodo;
 
 /// <summary>
@@ -6,28 +8,27 @@ namespace DonetickCalDav.CalDav.VTodo;
 /// </summary>
 /// <remarks>
 /// iCalendar: 0 = undefined, 1 = highest, 5 = medium, 9 = lowest.
-/// Donetick:  0 = none, 1 = low, 2 = medium, 3 = high, 4 = urgent.
 /// </remarks>
 public static class PriorityMapper
 {
     /// <summary>Converts Donetick priority (0-4) to iCalendar PRIORITY (0-9).</summary>
     public static int ToVTodoPriority(int donetickPriority) => donetickPriority switch
     {
-        1 => 9,  // Low    → lowest iCal
-        2 => 5,  // Medium → medium iCal
-        3 => 3,  // High   → high iCal
-        4 => 1,  // Urgent → highest iCal
-        _ => 0,  // None   → undefined iCal
+        ChorePriority.Low    => 9,  // Lowest iCal
+        ChorePriority.Medium => 5,  // Medium iCal
+        ChorePriority.High   => 3,  // High iCal
+        ChorePriority.Urgent => 1,  // Highest iCal
+        _ => 0,                     // Undefined iCal
     };
 
     /// <summary>Converts iCalendar PRIORITY (0-9) to Donetick priority (0-4).</summary>
     public static int FromVTodoPriority(int icalPriority) => icalPriority switch
     {
-        0      => 0,  // Undefined → None
-        1 or 2 => 4,  // Highest   → Urgent
-        3 or 4 => 3,  // High      → High
-        5 or 6 => 2,  // Medium    → Medium
-        >= 7   => 1,  // Lowest    → Low
-        _      => 0,
+        0      => ChorePriority.None,    // Undefined
+        1 or 2 => ChorePriority.Urgent,  // Highest
+        3 or 4 => ChorePriority.High,    // High
+        5 or 6 => ChorePriority.Medium,  // Medium
+        >= 7   => ChorePriority.Low,     // Lowest
+        _      => ChorePriority.None,
     };
 }

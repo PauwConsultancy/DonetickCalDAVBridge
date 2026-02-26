@@ -35,6 +35,9 @@ public sealed class ChoreSyncService : BackgroundService
         // Short delay to let the rest of the app finish starting up
         await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
 
+        // Initial connectivity check — log clearly if Donetick is unreachable at startup
+        await PerformStartupCheckAsync(stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             await SyncChoresAsync(stoppingToken);
@@ -42,6 +45,48 @@ public sealed class ChoreSyncService : BackgroundService
         }
 
         _logger.LogInformation("Chore sync service stopping");
+    }
+
+    /// <summary>
+    /// Performs the first sync with explicit startup logging.
+    /// Retries up to 3 times with backoff so transient failures during container startup
+    /// (e.g. Donetick not yet ready) don't leave the cache permanently empty.
+    /// </summary>
+    private async Task PerformStartupCheckAsync(CancellationToken ct)
+    {
+        var baseUrl = _settings.Value.Donetick.BaseUrl;
+
+        for (var attempt = 1; attempt <= 3; attempt++)
+        {
+            try
+            {
+                var chores = await _client.GetAllChoresAsync(ct);
+                _cache.UpdateChores(chores);
+                _logger.LogInformation(
+                    "Startup sync successful — loaded {Count} chores from {BaseUrl}",
+                    chores.Count, baseUrl);
+                return;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Startup sync attempt {Attempt}/3 failed — Donetick API at {BaseUrl} unreachable",
+                    attempt, baseUrl);
+
+                if (attempt < 3)
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 3), ct);
+            }
+        }
+
+        _logger.LogError(
+            "Donetick API at {BaseUrl} unreachable after 3 attempts — " +
+            "cache is empty, CalDAV clients will see no tasks. " +
+            "Check Donetick__BaseUrl and Donetick__ApiKey configuration.",
+            baseUrl);
     }
 
     /// <summary>

@@ -344,17 +344,16 @@ Planned features and improvements (contributions welcome):
 
 ### Improvements
 
-- [ ] **Conditional GET (If-None-Match)** — return 304 Not Modified when the client's ETag matches, saving bandwidth and speeding up sync
-- [ ] **Smarter cache refresh after writes** — after PUT, only refresh the affected chore instead of fetching the entire list from Donetick
-- [ ] **CancellationToken propagation** — pass `context.RequestAborted` to Donetick API calls so requests are cancelled when clients disconnect
-- [ ] **Status/priority constants** — replace magic numbers (`0`, `1`, `2`, `3`) with named constants or enums for readability
+- [x] **Conditional GET (If-None-Match)** — return 304 Not Modified when the client's ETag matches, saving bandwidth and speeding up sync
+- [x] **Smarter cache refresh after writes** — after PUT, only refresh the affected chore instead of fetching the entire list from Donetick
+- [x] **CancellationToken propagation** — pass `context.RequestAborted` to Donetick API calls so requests are cancelled when clients disconnect
+- [x] **Status/priority constants** — replace magic numbers (`0`, `1`, `2`, `3`) with named constants or enums for readability
 
 ### New features
 
-- [ ] **MOVE support** — handle Apple Reminders drag & drop between lists (when `GroupByLabel=true`). Currently returns 405; may be limited by the Donetick eAPI (no label management)
-- [ ] **JSON health endpoint** — add `/health/json` for monitoring tools (Uptime Kuma, Docker HEALTHCHECK) that expect a simple JSON response instead of HTML
-- [ ] **Startup connectivity check** — warn clearly in logs and on the status page when Donetick is unreachable at startup (currently the cache just stays empty)
-- [ ] **Rate limiting** — basic request throttling per IP or username to protect against misbehaving clients
+- [x] **MOVE support** — returns 403 when Apple Reminders drags tasks between lists (Donetick eAPI has no label management). Apple shows an error and leaves the task in place
+- [x] **JSON health endpoint** — `/health/json` for monitoring tools (Uptime Kuma, Docker HEALTHCHECK); returns 200 when healthy, 503 when cache is empty
+- [x] **Startup connectivity check** — retries 3× with backoff on startup; logs clear error with configuration hints when Donetick is unreachable
 - [ ] **CI/CD pipeline** — GitHub Actions workflow to build, test, and publish Docker images to GHCR or Docker Hub
 
 ## License

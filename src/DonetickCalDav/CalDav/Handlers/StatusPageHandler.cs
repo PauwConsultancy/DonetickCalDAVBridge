@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using System.Web;
 using DonetickCalDav.Cache;
 using DonetickCalDav.Configuration;
@@ -7,8 +8,8 @@ using Microsoft.Extensions.Options;
 namespace DonetickCalDav.CalDav.Handlers;
 
 /// <summary>
-/// Renders a lightweight HTML status page for the health check endpoint.
-/// Shows version, uptime, cache statistics, client activity, and connection info.
+/// Renders a lightweight HTML status page for the health check endpoint,
+/// and a JSON endpoint for monitoring tools (Uptime Kuma, Docker HEALTHCHECK).
 /// </summary>
 public sealed class StatusPageHandler
 {
@@ -26,6 +27,40 @@ public sealed class StatusPageHandler
         _clientTracker = clientTracker;
         _settings = settings.Value;
         _version = version;
+    }
+
+    /// <summary>
+    /// Returns a JSON health response for monitoring tools.
+    /// HTTP 200 when cache has chores (healthy), 503 when cache is empty (unhealthy).
+    /// </summary>
+    public async Task HandleJsonAsync(HttpContext context)
+    {
+        var chores = _cache.GetAllChores();
+        var uptime = DateTime.UtcNow - StartTime;
+        var healthy = chores.Count > 0;
+
+        var response = new
+        {
+            status = healthy ? "healthy" : "unhealthy",
+            version = _version,
+            uptime_seconds = (int)uptime.TotalSeconds,
+            cache = new
+            {
+                total_chores = chores.Count,
+                active = chores.Count(c => c.Chore.IsActive),
+                with_due_date = chores.Count(c => c.Chore.NextDueDate.HasValue),
+            },
+            donetick = new
+            {
+                base_url = _settings.Donetick.BaseUrl,
+                poll_interval_seconds = _settings.Donetick.PollIntervalSeconds,
+            }
+        };
+
+        context.Response.StatusCode = healthy ? 200 : 503;
+        context.Response.ContentType = "application/json; charset=utf-8";
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }));
     }
 
     public async Task HandleAsync(HttpContext context)

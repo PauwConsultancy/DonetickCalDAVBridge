@@ -8,6 +8,7 @@ namespace DonetickCalDav.CalDav.Handlers;
 /// <summary>
 /// Handles GET requests for individual .ics (VTODO) resources.
 /// Returns the full iCalendar content with appropriate ETag header.
+/// Supports conditional requests via If-None-Match (returns 304 when ETag matches).
 /// </summary>
 public sealed class GetHandler
 {
@@ -36,6 +37,16 @@ public sealed class GetHandler
         {
             _logger.LogDebug("GET: chore {Id} not found in cache", id.Value);
             context.Response.StatusCode = 404;
+            return;
+        }
+
+        // Conditional GET: return 304 Not Modified when client already has current version
+        var ifNoneMatch = context.Request.Headers["If-None-Match"].FirstOrDefault();
+        if (ifNoneMatch != null && ifNoneMatch == cached.ETag)
+        {
+            _logger.LogDebug("GET: chore {Id} — 304 Not Modified (ETag match)", id.Value);
+            context.Response.StatusCode = 304;
+            context.Response.Headers["ETag"] = cached.ETag;
             return;
         }
 

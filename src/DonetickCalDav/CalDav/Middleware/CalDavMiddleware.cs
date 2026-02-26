@@ -57,10 +57,16 @@ public sealed class CalDavMiddleware
             return;
         }
 
-        // Status / health check endpoint
+        // Status / health check endpoints
         if (path is "/" or "/health")
         {
             await _statusPage.HandleAsync(context);
+            return;
+        }
+
+        if (path.Equals("/health/json", StringComparison.OrdinalIgnoreCase))
+        {
+            await _statusPage.HandleJsonAsync(context);
             return;
         }
 
@@ -141,6 +147,16 @@ public sealed class CalDavMiddleware
 
             case "PROPPATCH":
                 await propPatchHandler.HandleAsync(context);
+                break;
+
+            case "MOVE":
+                // Apple Reminders sends MOVE when dragging tasks between lists (GroupByLabel).
+                // The Donetick eAPI does not support label management, so we cannot
+                // reassign a task to a different label. Return 403 — Apple will show
+                // an error and leave the task in its original list.
+                _logger.LogInformation("MOVE {Path} — rejected (label management not supported by Donetick eAPI)",
+                    context.Request.Path.Value);
+                context.Response.StatusCode = 403;
                 break;
 
             case "MKCALENDAR" or "MKCOL":

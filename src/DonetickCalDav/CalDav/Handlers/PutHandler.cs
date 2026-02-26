@@ -101,19 +101,25 @@ public sealed class PutHandler
         if (shouldComplete)
         {
             _logger.LogInformation("PUT update: completing chore {Id} in Donetick", choreId);
-            await _client.CompleteChoreAsync(choreId);
+            var ct = context.RequestAborted;
+            await _client.CompleteChoreAsync(choreId, ct);
+
+            // Completion triggers server-side changes (NextDueDate advancement, status reset)
+            // that we cannot predict — full cache refresh is required.
+            var chores = await _client.GetAllChoresAsync(ct);
+            _cache.UpdateChores(chores);
         }
         else
         {
             var request = VTodoMapper.ToUpdateRequest(vtodo);
             _logger.LogDebug("PUT update: updating chore {Id} — name={Name} due={Due}",
                 choreId, request.Name, request.DueDate);
-            await _client.UpdateChoreAsync(choreId, request);
-        }
+            var updated = await _client.UpdateChoreAsync(choreId, request, context.RequestAborted);
 
-        // Refresh cache to pick up any server-side changes (new NextDueDate, status reset)
-        var chores = await _client.GetAllChoresAsync();
-        _cache.UpdateChores(chores);
+            // Update only the affected chore — no need to refetch the entire list.
+            if (updated != null)
+                _cache.UpsertChore(updated);
+        }
 
         context.Response.StatusCode = 204;
 
@@ -139,7 +145,7 @@ public sealed class PutHandler
         var request = VTodoMapper.ToCreateRequest(vtodo);
         _logger.LogDebug("PUT create: creating new chore — name={Name} due={Due}", request.Name, request.DueDate);
 
-        var created = await _client.CreateChoreAsync(request);
+        var created = await _client.CreateChoreAsync(request, context.RequestAborted);
         if (created == null)
         {
             _logger.LogError("PUT create: Donetick returned null for create request");

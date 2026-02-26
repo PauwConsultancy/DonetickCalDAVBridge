@@ -32,7 +32,7 @@ public sealed class DeleteHandler
         try
         {
             _logger.LogInformation("DELETE: removing chore {Id} from Donetick", id.Value);
-            await _client.DeleteChoreAsync(id.Value);
+            await _client.DeleteChoreAsync(id.Value, context.RequestAborted);
             _cache.InvalidateChore(id.Value);
             context.Response.StatusCode = 204;
         }

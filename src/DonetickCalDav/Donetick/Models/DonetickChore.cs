@@ -2,13 +2,30 @@ using System.Text.Json.Serialization;
 
 namespace DonetickCalDav.Donetick.Models;
 
+/// <summary>Donetick chore status values (from the API "status" integer field).</summary>
+public static class ChoreStatus
+{
+    public const int NoStatus = 0;
+    public const int InProgress = 1;
+    public const int Paused = 2;
+    public const int PendingApproval = 3;
+}
+
+/// <summary>Donetick chore priority values (from the API "priority" integer field).</summary>
+public static class ChorePriority
+{
+    public const int None = 0;
+    public const int Low = 1;
+    public const int Medium = 2;
+    public const int High = 3;
+    public const int Urgent = 4;
+}
+
 /// <summary>
 /// Represents a single chore (task) as returned by the Donetick External API.
 /// Maps 1:1 to the JSON fields from GET /eapi/v1/chore.
 /// </summary>
 /// <remarks>
-/// Status values: 0 = NoStatus, 1 = InProgress, 2 = Paused, 3 = PendingApproval.
-/// Priority values: 0 = None, 1 = Low, 2 = Medium, 3 = High, 4 = Urgent.
 /// FrequencyType values: once, daily, weekly, monthly, yearly, adaptive, interval,
 ///   days_of_the_week, day_of_the_month, trigger, no_repeat.
 /// </remarks>
