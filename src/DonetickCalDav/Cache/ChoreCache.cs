@@ -6,6 +6,8 @@ namespace DonetickCalDav.Cache;
 
 /// <summary>
 /// Immutable snapshot of a cached chore with its computed ETag.
+/// Must remain a record (immutable) — ChoreCache.GetAllChores() returns snapshots without
+/// copying, so mutable properties would break thread-safety.
 /// </summary>
 public sealed record CachedChore(DonetickChore Chore, string ETag);
 

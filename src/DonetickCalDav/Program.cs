@@ -1,4 +1,6 @@
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
 using DonetickCalDav.Cache;
 using DonetickCalDav.CalDav.Handlers;
 using DonetickCalDav.CalDav.Middleware;
@@ -17,11 +19,31 @@ var configSection = builder.Configuration.Get<AppSettings>() ?? new AppSettings(
 builder.Services.Configure<AppSettings>(builder.Configuration);
 
 // -- HTTP client for the Donetick External API --
+// Retry strategy: designed for homelab scenarios where downtime = container restart or reboot.
+// Delays: 5s (hiccup), 15s (container restart), 40s (boot / migration).
+// Total worst-case ~60s — Apple Reminders times out at ~60s, so going beyond that is pointless.
 builder.Services.AddHttpClient<IDonetickApiClient, DonetickApiClient>(client =>
 {
     client.BaseAddress = new Uri(configSection.Donetick.BaseUrl);
     client.DefaultRequestHeaders.Add("secretkey", configSection.Donetick.ApiKey);
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(90);
+})
+.AddResilienceHandler("donetick", builder =>
+{
+    builder.AddRetry(new Polly.Retry.RetryStrategyOptions<HttpResponseMessage>
+    {
+        MaxRetryAttempts = 3,
+        DelayGenerator = args => ValueTask.FromResult<TimeSpan?>(args.AttemptNumber switch
+        {
+            0 => TimeSpan.FromSeconds(5),
+            1 => TimeSpan.FromSeconds(15),
+            2 => TimeSpan.FromSeconds(40),
+            _ => null
+        }),
+        ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+            .Handle<HttpRequestException>()
+            .HandleResult(r => r.StatusCode >= System.Net.HttpStatusCode.InternalServerError)
+    });
 });
 
 // -- Cache, calendar resolver, client tracking, and background sync --

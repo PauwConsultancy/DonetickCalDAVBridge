@@ -20,7 +20,7 @@ public class CalendarResolverTests
             CalDav = new CalDavSettings
             {
                 Username = "testuser",
-                CalendarName = "Donetick Tasks",
+                CalendarName = "DonetickTasks",
                 CalendarColor = "#4A90D9FF",
                 GroupByLabel = groupByLabel,
                 DefaultCalendarName = defaultCalendarName,
@@ -125,7 +125,7 @@ public class CalendarResolverTests
 
         calendars.Should().HaveCount(1);
         calendars[0].Slug.Should().Be("tasks");
-        calendars[0].DisplayName.Should().Be("Donetick Tasks");
+        calendars[0].DisplayName.Should().Be("DonetickTasks");
         calendars[0].Color.Should().Be("#4A90D9FF");
     }
 

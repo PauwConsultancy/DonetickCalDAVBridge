@@ -191,15 +191,15 @@ public sealed class StatusPageHandler
                         <div class="card-title">Connection</div>
                         <div class="row">
                             <span class="label">Donetick API</span>
-                            <span class="value">{{_settings.Donetick.BaseUrl}}</span>
+                            <span class="value">{{HttpUtility.HtmlEncode(_settings.Donetick.BaseUrl)}}</span>
                         </div>
                         <div class="row">
                             <span class="label">CalDAV user</span>
-                            <span class="value">{{_settings.CalDav.Username}}</span>
+                            <span class="value">{{HttpUtility.HtmlEncode(_settings.CalDav.Username)}}</span>
                         </div>
                         <div class="row">
                             <span class="label">Calendar</span>
-                            <span class="value">{{_settings.CalDav.CalendarName}}</span>
+                            <span class="value">{{HttpUtility.HtmlEncode(_settings.CalDav.CalendarName)}}</span>
                         </div>
                     </div>
 

@@ -15,7 +15,7 @@ public class GetHandlerTests
         CalDav = new CalDavSettings
         {
             Username = "user",
-            CalendarName = "Donetick Tasks",
+            CalendarName = "DonetickTasks",
             CalendarColor = "#4A90D9FF",
         },
     };
@@ -28,7 +28,8 @@ public class GetHandlerTests
         _handler = new GetHandler(_cache, Options.Create(TestSettings), NullLogger<GetHandler>.Instance);
     }
 
-    [Fact]
+    [Fact] // Known flaky: Ical.Net's SerializationContext occasionally throws a NullReferenceException
+           // in Pop() due to internal thread-static state. Passes on retry.
     public async Task HandleAsync_DonetickPath_Returns200WithIcsBody()
     {
         var chore = TestChoreFactory.Simple(42, "Test task");

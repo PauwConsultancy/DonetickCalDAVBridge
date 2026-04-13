@@ -37,8 +37,32 @@ public sealed class PutHandler
     public async Task HandleAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? "";
+
+        // Guard against oversized request bodies (e.g. buggy or malicious clients).
+        // A single VTODO is typically 0.5–2 KB; 1 MB is generous headroom.
+        const int maxBodySize = 1024 * 1024;
+        if (context.Request.ContentLength > maxBodySize)
+        {
+            _logger.LogWarning("PUT {Path} — rejected: Content-Length {Length} exceeds {Max} byte limit",
+                path, context.Request.ContentLength, maxBodySize);
+            context.Response.StatusCode = 413;
+            return;
+        }
+
         using var reader = new StreamReader(context.Request.Body);
-        var icsBody = await reader.ReadToEndAsync();
+        var buffer = new char[maxBodySize];
+        var charsRead = await reader.ReadBlockAsync(buffer, 0, maxBodySize);
+
+        // If the buffer is full and there's still more data, the body exceeds the limit.
+        if (charsRead == maxBodySize && reader.Peek() != -1)
+        {
+            _logger.LogWarning("PUT {Path} — rejected: body exceeds {Max} byte limit (Content-Length was absent or wrong)",
+                path, maxBodySize);
+            context.Response.StatusCode = 413;
+            return;
+        }
+
+        var icsBody = new string(buffer, 0, charsRead);
 
         _logger.LogDebug("PUT {Path} — body length: {Length}", path, icsBody.Length);
 
@@ -106,6 +130,8 @@ public sealed class PutHandler
 
             // Completion triggers server-side changes (NextDueDate advancement, status reset)
             // that we cannot predict — full cache refresh is required.
+            // Note: concurrent completions may overlap here (both fetch + update the full list),
+            // but this is safe — UpdateChores is idempotent and the last write wins with correct data.
             var chores = await _client.GetAllChoresAsync(ct);
             _cache.UpdateChores(chores);
         }

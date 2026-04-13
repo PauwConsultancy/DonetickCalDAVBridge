@@ -157,11 +157,13 @@ public sealed class CalDavMiddleware
                 _logger.LogInformation("MOVE {Path} — rejected (label management not supported by Donetick eAPI)",
                     context.Request.Path.Value);
                 context.Response.StatusCode = 403;
+                context.Response.Headers["Allow"] = AllowedMethods;
                 break;
 
             case "MKCALENDAR" or "MKCOL":
                 // Apple may attempt these but they are not supported
                 context.Response.StatusCode = 403;
+                context.Response.Headers["Allow"] = AllowedMethods;
                 break;
 
             default:

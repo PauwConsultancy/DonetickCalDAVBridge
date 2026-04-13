@@ -12,7 +12,7 @@ services:
       - Donetick__PollIntervalSeconds=30
       - CalDav__Username=user                     # CalDAV login username
       - CalDav__Password=changeme                 # CalDAV login password
-      - CalDav__CalendarName=Donetick Tasks
+      - CalDav__CalendarName=DonetickTasks
       - CalDav__CalendarColor=#4A90D9FF
       - CalDav__ListenPort=5232
       # -- Optional: feature flags --

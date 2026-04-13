@@ -49,7 +49,7 @@ public sealed class CalDavSettings
     public string Password { get; set; } = "pass";
 
     /// <summary>Display name shown in Apple Reminders for this calendar.</summary>
-    public string CalendarName { get; set; } = "Donetick Tasks";
+    public string CalendarName { get; set; } = "DonetickTasks";
 
     /// <summary>Calendar colour in Apple hex format (RRGGBBAA).</summary>
     public string CalendarColor { get; set; } = "#4A90D9FF";

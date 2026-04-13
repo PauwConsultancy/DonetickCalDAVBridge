@@ -108,12 +108,12 @@
   <Config
     Name="Calendar Name"
     Target="CalDav__CalendarName"
-    Default="Donetick Tasks"
+    Default="DonetickTasks"
     Description="Display name shown in your calendar app for this task list."
     Type="Variable"
     Display="always"
     Required="false"
-    Mask="false">Donetick Tasks</Config>
+    Mask="false">DonetickTasks</Config>
 
   <Config
     Name="Calendar Color"

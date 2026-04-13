@@ -28,15 +28,17 @@ I wanted to see if I can let AI write a complete project with me just supervisin
 ## How It Works
 
 ```
-┌──────────────┐       CalDAV        ┌──────────────────┐      REST API      ┌──────────┐
-│ Apple         │ ◄──────────────► │ Donetick CalDAV   │ ◄──────────────► │ Donetick │
-│ Reminders     │   VTODO/PROPFIND  │ Bridge            │   /eapi/v1/chore  │ Server   │
-└──────────────┘                    └──────────────────┘                    └──────────┘
+┌───────────┐      CalDAV      ┌─────────────────┐     REST API     ┌──────────┐
+│ Apple     │ ◄──────────────► │ Donetick CalDAV │ ◄──────────────► │ Donetick │
+│ Reminders │  VTODO/PROPFIND  │ Bridge          │  /eapi/v1/chore  │ Server   │
+└───────────┘                  └─────────────────┘                  └──────────┘
 ```
 
-Tasks appear in **Apple Reminders** (not Calendar.app) because VTODO items are handled by the Reminders app on macOS/iOS.
+Tasks appear in **Apple Reminders** as list items. Tasks with a due date also show up in **Calendar.app** as to-do entries on the relevant day.
 
 > **Important:** Apple Calendar and Reminders require HTTPS to send Basic Auth credentials. See the [HTTPS Setup](#https-setup) section below.
+> **Note:** This bridge has only been tested with Apple Reminders and Calendar.app (macOS/iOS). Other CalDAV clients should work but are untested.
+
 
 ## Quick Start (Docker Compose)
 
@@ -72,7 +74,7 @@ docker compose up -d
    | Field    | Value                                        |
    |----------|----------------------------------------------|
    | Type     | CalDAV (Manual)                              |
-   | Server   | `https://your-server`                        |
+   | Server   | `https://your-bridge-host`                   |
    | Username | Value of `CalDav__Username`                  |
    | Password | Value of `CalDav__Password`                  |
 
@@ -80,9 +82,9 @@ docker compose up -d
 
    - Go to **System Settings → Internet Accounts** and select the newly created account
    - **Enable "Reminders"** — this is required, since Donetick tasks are VTODO items
-   - You can **disable "Calendars"** — this bridge does not serve calendar events, and Calendar.app may show an error if left enabled
+   - You can optionally **enable "Calendars"** — tasks with a due date will then also appear in Calendar.app
 
-   Your Donetick tasks will appear in the **Reminders** app. Tasks with a due date will also show up in **Calendar.app** automatically.
+   Your Donetick tasks will appear in the **Reminders** app. Tasks with a due date will also show up in **Calendar.app** on the relevant day.
 
 ## Group by Label
 
@@ -182,7 +184,7 @@ If you run Tailscale
 ```bash
 tailscale serve --bg http://localhost:5232
 ```
-Then use `https://your-hostname.ts.net` as the server URL.
+Then use `https://your-hostname.ts.net` as the Donetick CalDAV Bridge URL.
 
 or you can generate trusted certs for your machine:
 
@@ -202,7 +204,7 @@ services:
       - CalDav__Tls__KeyPath=/certs/your-hostname.ts.net.key
 ```
 
-Then use `https://your-hostname.ts.net:5232` as the server URL.
+Then use `https://your-hostname.ts.net:5232` as the Donetick CalDAV Bridge URL.
 
 ### Option 2: PFX certificate
 
@@ -330,33 +332,9 @@ src/DonetickCalDav/
 
 - **In-memory cache only** — there is no persistent storage; the cache rebuilds on restart
 - **External API constraints** — Donetick's eAPI only supports setting name, description, and due date on create/update. Priority, labels, and recurrence must be managed in Donetick directly.
-- **Moving tasks between lists** — when you drag a task to a different list in Apple Reminders, the app deletes the original and creates a new one. Because the eAPI cannot set labels, priority, or recurrence on create, the new task loses all metadata and falls back to the default list. **Do not move tasks between lists in Apple Reminders** — manage labels in Donetick instead. This is a Donetick eAPI limitation, not a bridge limitation; resolving it requires extending the Donetick API with label and recurrence support on the create/update endpoints.
+- **Moving tasks between lists** — when you drag a task to a different list in Apple Reminders, the app sends a MOVE request. The bridge rejects this with 403 because the Donetick eAPI does not support label management. Apple will show an error and leave the task in its original list. **Manage labels in Donetick instead.**
 - **Single-user** — designed for a single Donetick account; all CalDAV clients share the same task list
 - **Apple tag limitation** — Apple Reminders does not display `CATEGORIES` or `X-APPLE-HASHTAGS` from CalDAV accounts (only iCloud). The `GroupByLabel` feature works around this by using separate calendar collections.
-
-## Backlog
-
-Planned features and improvements (contributions welcome):
-
-### Done
-
-- [x] **All-day events** — option to emit tasks without a specific time (`CalDav__AllDayEvents=true`), so they appear as all-day items in Calendar.app instead of at a specific hour
-- [x] **Preserve original scheduled time** — option to keep the originally configured due time on recurring tasks (`CalDav__PreserveScheduledTime=true`)
-- [x] **Unraid template** — `unraid-template.xml` for Unraid Community Applications
-
-### Improvements
-
-- [x] **Conditional GET (If-None-Match)** — return 304 Not Modified when the client's ETag matches, saving bandwidth and speeding up sync
-- [x] **Smarter cache refresh after writes** — after PUT, only refresh the affected chore instead of fetching the entire list from Donetick
-- [x] **CancellationToken propagation** — pass `context.RequestAborted` to Donetick API calls so requests are cancelled when clients disconnect
-- [x] **Status/priority constants** — replace magic numbers (`0`, `1`, `2`, `3`) with named constants or enums for readability
-
-### New features
-
-- [x] **MOVE support** — returns 403 when Apple Reminders drags tasks between lists (Donetick eAPI has no label management). Apple shows an error and leaves the task in place
-- [x] **JSON health endpoint** — `/health/json` for monitoring tools (Uptime Kuma, Docker HEALTHCHECK); returns 200 when healthy, 503 when cache is empty
-- [x] **Startup connectivity check** — retries 3× with backoff on startup; logs clear error with configuration hints when Donetick is unreachable
-- [ ] **CI/CD pipeline** — GitHub Actions workflow to build, test, and publish Docker images to GHCR or Docker Hub
 
 ## License
 

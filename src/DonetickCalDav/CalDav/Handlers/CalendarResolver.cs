@@ -173,6 +173,8 @@ public sealed partial class CalendarResolver
     /// <summary>
     /// Converts a label name to a URL-safe slug.
     /// "Private tasks" → "private-tasks", "Work &amp; Life" → "work--life".
+    /// Note: different labels can produce the same slug (e.g. "groceries!" and "groceries?"
+    /// both become "boodschappen"). When this happens their tasks are merged into one calendar.
     /// </summary>
     public static string ToSlug(string labelName)
     {
