@@ -20,7 +20,7 @@ This is deliberate — see "In-memory cache only" below.
 
 - **.NET 10 LTS** (C#), ASP.NET Core minimal hosting — chosen for LTS window to Nov 2028
 - **No ORM.** No database. No persistent store of any kind inside this service.
-- **Ical.Net** for VTODO parsing (ANTLR-based; undocumented exception surface — wrap broadly)
+- **Ical.Net 5** for VTODO parsing and serialisation (undocumented exception surface — wrap broadly; create a `CalendarSerializer` per call, a shared one is not thread-safe)
 - **Microsoft.Extensions.Http.Resilience** (Polly) for retry — not a custom retry loop
 - **xUnit + FluentAssertions** for tests
 

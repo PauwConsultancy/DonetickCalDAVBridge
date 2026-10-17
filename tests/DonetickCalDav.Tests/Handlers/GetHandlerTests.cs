@@ -28,8 +28,7 @@ public class GetHandlerTests
         _handler = new GetHandler(_cache, Options.Create(TestSettings), NullLogger<GetHandler>.Instance);
     }
 
-    [Fact] // Known flaky: Ical.Net's SerializationContext occasionally throws a NullReferenceException
-           // in Pop() due to internal thread-static state. Passes on retry.
+    [Fact]
     public async Task HandleAsync_DonetickPath_Returns200WithIcsBody()
     {
         var chore = TestChoreFactory.Simple(42, "Test task");

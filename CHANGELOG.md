@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Ical.Net 4.3.1 to 5.2.3 (v4 is out of support); code migrated to the v5 API
+- Microsoft.Extensions.Http.Resilience 10.4.0 to 10.11.0
+- Test packages: Microsoft.NET.Test.Sdk 18.11.0, xunit.runner.visualstudio 4.0.1, NSubstitute 6.2.0, FluentAssertions 7.2.2 (last Apache-2.0 release); xunit stays on 2.9.3
+- All package versions are pinned instead of floating ranges (`4.*`, `2.*`)
+- VTODO output: `PRODID` is now the bridge's own, the redundant `DURATION` next to `DUE` is no longer emitted (RFC 5545 does not allow both), and several labels are emitted as one `CATEGORIES` line. `DUE`, `DTSTART` and all other properties are unchanged
+
+### Fixed
+- `NullReferenceException` during ICS serialisation under concurrent requests: `VTodoMapper` shared one `CalendarSerializer`, whose context is not thread-safe. This was also the cause of the "known flaky" GetHandler test; the annotation is removed and a regression test added
+
 ### Documentation
 - Added `docs/` with a functional design, a technical design, a findings report and PlantUML diagrams (sources and rendered SVGs), reverse engineered from 0.7.1
 - README: link to the design documentation

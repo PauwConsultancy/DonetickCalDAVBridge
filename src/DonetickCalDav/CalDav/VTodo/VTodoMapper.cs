@@ -14,8 +14,6 @@ namespace DonetickCalDav.CalDav.VTodo;
 /// </summary>
 public static class VTodoMapper
 {
-    private static readonly CalendarSerializer Serializer = new();
-
     /// <summary>
     /// Converts a Donetick chore to a complete VCALENDAR/VTODO ICS string.
     /// </summary>
@@ -36,7 +34,10 @@ public static class VTodoMapper
         var todo = BuildTodo(chore, allDayEvents, preserveScheduledTime);
         var calendar = WrapInCalendar(todo);
 
-        return Serializer.SerializeToString(calendar);
+        // A new serializer per call: a CalendarSerializer owns a SerializationContext with a
+        // non-thread-safe object stack, so a shared static instance breaks under concurrent requests.
+        return new CalendarSerializer().SerializeToString(calendar)
+               ?? throw new InvalidOperationException($"Ical.Net produced no output for chore {chore.Id}.");
     }
 
     /// <summary>
@@ -48,7 +49,8 @@ public static class VTodoMapper
     {
         Name = vtodo.Summary ?? "Untitled Task",
         Description = NullIfEmpty(vtodo.Description),
-        DueDate = vtodo.Due?.AsDateTimeOffset.ToString("yyyy-MM-dd"),
+        // Date part in the value's own time zone (TZID, UTC or floating), as sent by the client.
+        DueDate = vtodo.Due?.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
     };
 
     /// <summary>Builds the core VTODO component from a Donetick chore.</summary>
@@ -102,18 +104,18 @@ public static class VTodoMapper
             // VALUE=DATE — no time component, no timezone.
             // Calendar.app renders this as an all-day item at the top of the day.
             // Reminders.app shows "today" instead of "today at 14:00".
-            // HasTime must be explicitly set to false so Ical.Net serialises as
-            // "DUE;VALUE=DATE:YYYYMMDD" instead of "DUE:YYYYMMDDTHHMMSS".
-            // IMPORTANT: separate CalDateTime instances — Ical.Net mutates objects
-            // during serialisation, so sharing a single instance causes NullReferenceException.
+            // A date-only CalDateTime serialises as "DUE;VALUE=DATE:YYYYMMDD".
+            // Separate instances for DUE and DTSTART: each property owns its value object.
             todo.Due = MakeDateOnly(effectiveDate);
             todo.DtStart = MakeDateOnly(effectiveDate);
         }
         else
         {
             todo.Due = new CalDateTime(effectiveDate, "UTC");
-            // DtStart on the date portion aids Calendar.app display compatibility
-            todo.DtStart = new CalDateTime(effectiveDate.Date, "UTC");
+            // DtStart on the date portion aids Calendar.app display compatibility.
+            // Emitted as VALUE=DATE, as Ical.Net 4 did implicitly for a midnight value,
+            // so the VTODO shape seen by already-synced clients stays the same.
+            todo.DtStart = MakeDateOnly(effectiveDate);
         }
     }
 
@@ -162,13 +164,10 @@ public static class VTodoMapper
     }
 
     /// <summary>
-    /// Creates a date-only CalDateTime (VALUE=DATE) with no time component and no timezone.
-    /// Uses explicit UTC DateTimeKind and null TzId to prevent Ical.Net's PropertySerializer
-    /// from hitting null references on timezone lookups in containerised environments.
+    /// Creates a date-only CalDateTime (VALUE=DATE): no time component and no timezone (floating),
+    /// so the task shows on the same calendar day in every client timezone.
     /// </summary>
-    private static CalDateTime MakeDateOnly(DateTime dt) =>
-        new(new DateTime(dt.Year, dt.Month, dt.Day, 0, 0, 0, DateTimeKind.Utc))
-            { HasTime = false, TzId = null };
+    private static CalDateTime MakeDateOnly(DateTime dt) => new(DateOnly.FromDateTime(dt));
 
     private static void ApplyCategories(Todo todo, DonetickChore chore)
     {

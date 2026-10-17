@@ -74,11 +74,11 @@ Source: [diagrams/components.puml](diagrams/components.puml)
 |------|--------|--------------------------------------------|
 | Runtime | .NET, `net10.0` | 10 (LTS) |
 | Web host | ASP.NET Core minimal hosting, Kestrel | 10 |
-| iCalendar | Ical.Net | `4.*`, resolved 4.3.1 |
-| HTTP resilience | Microsoft.Extensions.Http.Resilience (Polly v8) | 10.4.0 |
+| iCalendar | Ical.Net | 5.2.3 |
+| HTTP resilience | Microsoft.Extensions.Http.Resilience (Polly v8) | 10.11.0 |
 | JSON | System.Text.Json | framework |
 | XML | System.Xml.Linq | framework |
-| Tests | xUnit, FluentAssertions, NSubstitute, Microsoft.NET.Test.Sdk | `2.*` (2.9.3), `6.*` (6.12.2), 5.3.0, `17.*` (17.14.1) |
+| Tests | xUnit, xunit.runner.visualstudio, FluentAssertions, NSubstitute, Microsoft.NET.Test.Sdk | 2.9.3, 4.0.1, 7.2.2, 6.2.0, 18.11.0 |
 | Container | `mcr.microsoft.com/dotnet/sdk:10.0` (build), `mcr.microsoft.com/dotnet/aspnet:10.0` (runtime) | 10.0 |
 
 The application version is declared once, in `<Version>` of `DonetickCalDav.csproj`, and read at runtime from `AssemblyInformationalVersionAttribute`.
@@ -311,7 +311,7 @@ Source: [diagrams/act-put-routing.puml](diagrams/act-put-routing.puml)
 Details:
 
 - **Body limit:** `Content-Length` over 1,048,576 is rejected before reading. The body is then read into a 1,048,576-character buffer with `ReadBlockAsync`; if the buffer is full and more data follows, 413. The second check counts characters, not bytes.
-- **Parsing:** `Calendar.Load` from Ical.Net; the first VTODO is used. Every exception except `OperationCanceledException` is caught and turned into 400, because Ical.Net does not document its exception surface.
+- **Parsing:** `Calendar.Load` from Ical.Net; the first VTODO is used. Every exception except `OperationCanceledException` is caught and turned into 400. Ical.Net does not document its exception surface; in practice the parser throws `SerializationException` on malformed lines and `Calendar.Load` throws `InvalidOperationException` when a body holds several VCALENDARs.
 - **ID resolution:** path pattern `donetick-(\d+)\.ics$`, then UID `donetick-{id}@donetick`, then the UID map. The UUID file name in the path is not consulted by PUT; the UID inside the body is.
 - **Error mapping:** `HttpRequestException` from the Donetick client gives 502. Other exceptions are not caught by the handler and result in a 500 from the host.
 
@@ -336,7 +336,7 @@ DELETE resolves the ID from the path only (canonical name or client UUID through
 
 ## 11 VTODO mapping
 ### 11.1 Chore to VTODO
-`VTodoMapper.ToIcsString` builds an Ical.Net `Todo`, wraps it in a `Calendar` with `PRODID:-//Donetick//CalDAV Bridge//EN` and serialises it with a static `CalendarSerializer`. The ICS is generated on every request; it is not cached.
+`VTodoMapper.ToIcsString` builds an Ical.Net `Todo`, wraps it in a `Calendar` with `PRODID:-//Donetick//CalDAV Bridge//EN` and serialises it with a new `CalendarSerializer` per call. A shared instance is not safe: its `SerializationContext` keeps a non-thread-safe object stack, and concurrent requests then fail with `NullReferenceException`. The ICS is generated on every request; it is not cached.
 
 | Property | Value |
 |----------|-------|
@@ -357,8 +357,8 @@ The status and priority tables are in the functional design, BR-04 and BR-06.
 ### 11.2 Due date rules
 1. Start from `nextDueDate`, treated as UTC.
 2. If `PreserveScheduledTime`: `AdjustToScheduledTime` parses `frequencyMetadata.time` with `TimeOnly.TryParse`. With a resolvable `timezone` (`TimeZoneInfo.FindSystemTimeZoneById`), it converts to local time, replaces hour and minute (seconds zero) and converts back to UTC. Without a time zone, or when the zone is unknown, it replaces hour and minute in UTC. An empty or unparseable time leaves the value unchanged.
-3. If `AllDayEvents`: `DUE` and `DTSTART` become date-only values (`VALUE=DATE`) built from the **UTC** year, month and day, with `HasTime = false` and no `TzId`. Two separate `CalDateTime` instances are used because Ical.Net mutates them during serialisation.
-4. Otherwise: `DUE` is the UTC date-time; `DTSTART` is the UTC date at 00:00.
+3. If `AllDayEvents`: `DUE` and `DTSTART` become date-only values (`VALUE=DATE`, no time zone) built from the **UTC** year, month and day, using `new CalDateTime(DateOnly)`. Each property gets its own instance.
+4. Otherwise: `DUE` is the UTC date-time; `DTSTART` is a date-only value (`VALUE=DATE`) of the UTC date. This is the shape Ical.Net 4 produced implicitly and that synced clients know; a unit test guards it. No `DURATION` is emitted next to `DUE`.
 
 Time zone IDs are resolved by the runtime. The default `aspnet:10.0` image is a regular (non-chiseled, non-Alpine) Linux image with ICU and time zone data, so IANA IDs such as `Europe/Amsterdam` resolve (**Assumption** based on the published base image, not verified in this repository).
 
@@ -474,7 +474,7 @@ TLS can be provided in three ways: `tailscale serve` in front of plain HTTP, bui
 
 | Area | Test class | Test methods |
 |------|------------|--------------|
-| VTODO mapping | `VTodoMapperTests` | 36 |
+| VTODO mapping | `VTodoMapperTests` | 38 |
 | Virtual calendars | `CalendarResolverTests` | 24 |
 | Cache | `ChoreCacheTests` | 20 |
 | Client tracking | `ClientTrackerTests` | 13 |
@@ -488,12 +488,12 @@ TLS can be provided in three ways: `tailscale serve` in front of plain HTTP, bui
 | GET handler | `GetHandlerTests` | 4 |
 | DELETE handler | `DeleteHandlerTests` | 3 |
 
-The counts are `[Fact]` and `[Theory]` attributes (160 in total); theories run more cases. Helpers: `TestChoreFactory` (named chore scenarios on a fixed base date) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
+The counts are `[Fact]` and `[Theory]` attributes (162 in total); theories run more cases. Helpers: `TestChoreFactory` (named chore scenarios on a fixed base date) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
 
 ### 16.2 Coverage gaps
 No tests exist for `PropFindHandler`, `ReportHandler`, `PropPatchHandler`, `CalDavMiddleware`, `CalDavAuthenticationHandler`, `StatusPageHandler`, `ChoreSyncService` or the startup composition. There are no integration tests against a CalDAV client or a Donetick instance; `instructions.md` states that manual verification against a real Donetick is the intended complement.
 
-`GetHandlerTests.HandleAsync_DonetickPath_Returns200WithIcsBody` is documented as occasionally flaky because of thread-static state in Ical.Net's serializer.
+`VTodoMapperTests.ToIcsString_ConcurrentCalls_DoNotThrow` serialises 20,000 chores in parallel and fails if a shared serializer is reintroduced.
 
 ## 17 Design decisions
 The decisions below are recorded with their rationale in [../instructions.md](../instructions.md). They are summarised here so the technical picture is complete.

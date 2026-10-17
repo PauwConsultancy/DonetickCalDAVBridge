@@ -34,10 +34,10 @@ public class VTodoMapperTests
         var chore = TestChoreFactory.Simple();
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
+        var calendar = Calendar.Load(ics)!;
 
         calendar.Todos.Should().HaveCount(1);
-        var todo = calendar.Todos[0];
+        var todo = calendar.Todos[0]!;
         todo.Uid.Should().Be("donetick-1@donetick");
         todo.Summary.Should().Be("Test chore");
         todo.Status.Should().Be("NEEDS-ACTION");
@@ -49,8 +49,8 @@ public class VTodoMapperTests
         var chore = TestChoreFactory.WithDueDate();
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Due.Should().NotBeNull();
         todo.DtStart.Should().NotBeNull();
@@ -63,8 +63,8 @@ public class VTodoMapperTests
         chore.NextDueDate = null;
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Due.Should().BeNull();
     }
@@ -77,8 +77,8 @@ public class VTodoMapperTests
         var chore = TestChoreFactory.WithLabels();
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Categories.Should().Contain("Work");
         todo.Categories.Should().Contain("Urgent");
@@ -103,8 +103,8 @@ public class VTodoMapperTests
         var chore = TestChoreFactory.WithLabels();
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         // Verify the custom property is present and has the right value
         var hashtagProp = todo.Properties.FirstOrDefault(p => p.Name == "X-APPLE-HASHTAGS");
@@ -121,8 +121,8 @@ public class VTodoMapperTests
         chore.LabelsV2 = [new() { Id = 1, Name = "Housework" }];
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Categories.Should().ContainSingle().Which.Should().Be("Housework");
 
@@ -162,8 +162,8 @@ public class VTodoMapperTests
         chore.Status = 1; // InProgress
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.PercentComplete.Should().Be(50);
     }
@@ -174,8 +174,8 @@ public class VTodoMapperTests
         var chore = TestChoreFactory.Inactive();
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Status.Should().Be("CANCELLED");
     }
@@ -200,8 +200,8 @@ public class VTodoMapperTests
         chore.Priority = 3; // High
 
         var ics = VTodoMapper.ToIcsString(chore);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Priority.Should().Be(3); // iCal high
     }
@@ -213,8 +213,38 @@ public class VTodoMapperTests
 
         var ics = VTodoMapper.ToIcsString(chore);
 
-        // Ical.Net may override the PRODID with its own; just verify one is present
-        ics.Should().Contain("PRODID:");
+        ics.Should().Contain("PRODID:-//Donetick//CalDAV Bridge//EN");
+    }
+
+    [Fact]
+    public void ToIcsString_WithDueDate_KeepsVTodoShapeForSyncedClients()
+    {
+        // Guards the shape Apple clients have synced since Ical.Net 4: DTSTART as a DATE value,
+        // DUE as a UTC DATE-TIME, and no DURATION next to DUE.
+        var chore = TestChoreFactory.WithDueDate(dueDate: new DateTime(2025, 6, 18, 10, 0, 0, DateTimeKind.Utc));
+
+        var ics = VTodoMapper.ToIcsString(chore);
+
+        ics.Should().Contain("DTSTART;VALUE=DATE:20250618");
+        ics.Should().Contain("DUE:20250618T100000Z");
+        ics.Should().NotContain("DURATION");
+    }
+
+    [Fact]
+    public void ToIcsString_ConcurrentCalls_DoNotThrow()
+    {
+        // Regression guard: a shared CalendarSerializer is not thread-safe and threw
+        // NullReferenceException under concurrent requests.
+        var chores = new[]
+        {
+            TestChoreFactory.Simple(), TestChoreFactory.WithDueDate(), TestChoreFactory.DailyRecurring(),
+            TestChoreFactory.WithLabels(), TestChoreFactory.Inactive(), TestChoreFactory.WeeklyDaysOfWeek(),
+        };
+
+        var act = () => Parallel.For(0, 20_000, new ParallelOptions { MaxDegreeOfParallelism = 16 },
+            i => VTodoMapper.ToIcsString(chores[i % chores.Length], i % 2 == 0, i % 3 == 0));
+
+        act.Should().NotThrow();
     }
 
     // ── All-day events ──────────────────────────────────────────────────────
@@ -230,8 +260,8 @@ public class VTodoMapperTests
         ics.Should().Contain("DUE");
         // Should NOT contain VALUE=DATE (which signals date-only)
         // The default DATE-TIME serialisation does not emit VALUE=DATE-TIME explicitly
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
         todo.Due!.HasTime.Should().BeTrue("DUE should include a time component");
     }
 
@@ -245,8 +275,8 @@ public class VTodoMapperTests
         // VALUE=DATE means no time component
         ics.Should().Contain("VALUE=DATE");
 
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
         todo.Due!.HasTime.Should().BeFalse("DUE should be date-only (all-day)");
         todo.DtStart!.HasTime.Should().BeFalse("DTSTART should be date-only (all-day)");
     }
@@ -258,8 +288,8 @@ public class VTodoMapperTests
         var chore = TestChoreFactory.WithDueDate();
 
         var ics = VTodoMapper.ToIcsString(chore, allDayEvents: true);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Due!.Year.Should().Be(2025);
         todo.Due.Month.Should().Be(6);
@@ -273,8 +303,8 @@ public class VTodoMapperTests
         chore.NextDueDate = null;
 
         var ics = VTodoMapper.ToIcsString(chore, allDayEvents: true);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         todo.Due.Should().BeNull("no due date means DUE is omitted regardless of all-day setting");
     }
@@ -285,8 +315,8 @@ public class VTodoMapperTests
         var chore = TestChoreFactory.WithDueDate();
 
         var ics = VTodoMapper.ToIcsString(chore, allDayEvents: true);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         // Both DUE and DTSTART should be the same date-only value
         todo.Due!.Date.Should().Be(todo.DtStart!.Date);
@@ -301,10 +331,10 @@ public class VTodoMapperTests
         var icsDefault = VTodoMapper.ToIcsString(chore);
         var icsFalse = VTodoMapper.ToIcsString(chore, allDayEvents: false);
 
-        var calDefault = Calendar.Load(icsDefault);
-        var calFalse = Calendar.Load(icsFalse);
+        var calDefault = Calendar.Load(icsDefault)!;
+        var calFalse = Calendar.Load(icsFalse)!;
 
-        calDefault.Todos[0].Due!.HasTime.Should().Be(calFalse.Todos[0].Due!.HasTime);
+        calDefault.Todos[0]!.Due!.HasTime.Should().Be(calFalse.Todos[0]!.Due!.HasTime);
     }
 
     // ── Preserve scheduled time ─────────────────────────────────────────────
@@ -406,8 +436,8 @@ public class VTodoMapperTests
         };
 
         var ics = VTodoMapper.ToIcsString(chore, preserveScheduledTime: true);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         // 08:00 Amsterdam CEST = 06:00 UTC
         todo.Due!.Hour.Should().Be(6);
@@ -426,8 +456,8 @@ public class VTodoMapperTests
         };
 
         var ics = VTodoMapper.ToIcsString(chore, preserveScheduledTime: false);
-        var calendar = Calendar.Load(ics);
-        var todo = calendar.Todos[0];
+        var calendar = Calendar.Load(ics)!;
+        var todo = calendar.Todos[0]!;
 
         // Should keep original 08:00 UTC, NOT adjust to 04:00 UTC
         todo.Due!.Hour.Should().Be(8);
@@ -443,10 +473,10 @@ public class VTodoMapperTests
         var icsWithout = VTodoMapper.ToIcsString(chore, preserveScheduledTime: false);
         var icsWith = VTodoMapper.ToIcsString(chore, preserveScheduledTime: true);
 
-        var calWithout = Calendar.Load(icsWithout);
-        var calWith = Calendar.Load(icsWith);
+        var calWithout = Calendar.Load(icsWithout)!;
+        var calWith = Calendar.Load(icsWith)!;
 
-        calWith.Todos[0].Due!.Value.Should().Be(calWithout.Todos[0].Due!.Value);
+        calWith.Todos[0]!.Due!.Value.Should().Be(calWithout.Todos[0]!.Due!.Value);
     }
 
     // ── ToChoreLiteRequest ──────────────────────────────────────────────────

@@ -243,18 +243,19 @@ public sealed class PutHandler
 
     /// <summary>
     /// Parses the first VTODO from an ICS body, or returns null on failure.
-    /// Ical.Net wraps an ANTLR-generated parser and does not document its exception
-    /// surface — it can throw <see cref="ArgumentException"/>, <see cref="FormatException"/>,
-    /// <see cref="InvalidOperationException"/>, or ANTLR recognition exceptions. We catch
-    /// broadly but deliberately let <see cref="OperationCanceledException"/> propagate so
-    /// host shutdown remains responsive.
+    /// Ical.Net does not document its exception surface: the parser throws
+    /// <see cref="System.Runtime.Serialization.SerializationException"/> on malformed content lines,
+    /// <see cref="Calendar.Load(string)"/> throws <see cref="InvalidOperationException"/> when the body
+    /// holds more than one VCALENDAR, and data type parsing can throw <see cref="ArgumentException"/>
+    /// or <see cref="FormatException"/>. We catch broadly but deliberately let
+    /// <see cref="OperationCanceledException"/> propagate so host shutdown remains responsive.
     /// </summary>
     private Ical.Net.CalendarComponents.Todo? ParseVTodo(string icsBody)
     {
         try
         {
             var calendar = Calendar.Load(icsBody);
-            return calendar.Todos.FirstOrDefault();
+            return calendar?.Todos.FirstOrDefault();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -46,13 +46,13 @@ When a finding is resolved, remove its row and mention the fix in `CHANGELOG.md`
 | F-15 | Info | The UID map grows by one entry per created task for the lifetime of the process. | Acceptable; optionally prune entries older than a day. |
 | F-16 | Info | Two full loads run back to back at startup (startup check, then the first loop iteration). | Delay the first loop iteration by one interval. |
 | F-17 | Info | `ClientTracker.TotalRequests` sums only retained clients, so pruned clients disappear from the total. | Keep a separate counter. |
+| F-22 | Info | Polly logs every Donetick call at Information ("Execution attempt"), so each poll adds a log line (about 2,900 a day at the default interval). | Add `builder.Logging.AddFilter("Polly", LogLevel.Warning)` next to the existing HttpClient filter. |
 
 ## 3 Build and deployment
 
 | ID | Severity | Finding | Suggested direction |
 |----|----------|---------|---------------------|
 | F-18 | Low | The container runs as root and has no `HEALTHCHECK`; the `aspnet` image contains no curl or wget for a shell-based check. | Add `USER app` (the non-root user shipped in .NET 8 and later images; port 5232 needs no privileges) and a `HEALTHCHECK` on `/health/json`, which requires adding a small probe tool to the image. |
-| F-19 | Low | Floating package versions (`Ical.Net 4.*`, `xunit 2.*`, `FluentAssertions 6.*`, `Microsoft.NET.Test.Sdk 17.*`) make builds non-reproducible. | Pin versions or enable NuGet lock files (`RestorePackagesWithLockFile`). |
 | F-20 | Info | The Unraid template still points to `https://github.com/your-username/donetick-caldav` for registry, support and project. | Replace with the real repository. |
 | F-21 | Info | The default credentials `user` and `pass` in `appsettings.json` satisfy validation. | Remove the defaults so validation forces explicit values, or warn at startup. |
 
