@@ -1,0 +1,59 @@
+@startuml seq-sync
+!include style.iuml
+
+title Background synchronisation (ChoreSyncService)
+
+participant "Host" as H
+participant "ChoreSyncService" as S
+participant "DonetickApiClient\n+ Polly retry" as API
+participant "Donetick\n/eapi/v1/chore" as DT
+participant "ChoreCache" as CC
+
+H -> S : ExecuteAsync(stoppingToken)
+S -> S : delay 2 s
+
+== Startup check: up to 3 attempts, back-off 3 s and 6 s ==
+loop attempt = 1..3 until success
+  S -> API : GetAllChoresAsync()
+  API -> DT : GET /eapi/v1/chore  (secretkey header)
+  alt transient failure (HttpRequestException or 5xx)
+    API -> API : retry after 5 s, 15 s, 40 s
+  end
+  alt success
+    DT --> API : 200 JSON (array or {"res": [...]})
+    API --> S : List<DonetickChore>
+    S -> CC : UpdateChores(chores)
+    S -> S : log "Startup sync successful"
+  else failure
+    API --> S : exception
+    S -> S : log warning, wait attempt x 3 s
+  end
+end
+note right of S
+  After 3 failed attempts an error is logged
+  and the cache stays empty. Polling continues.
+end note
+
+== Polling loop ==
+loop until stoppingToken is cancelled
+  S -> API : GetAllChoresAsync()
+  API -> DT : GET /eapi/v1/chore
+  alt success
+    DT --> API : 200 JSON
+    API --> S : chores
+    S -> CC : UpdateChores(chores)
+    activate CC
+    CC -> CC : compute ETag per chore\nreuse existing entry if ETag equal
+    CC -> CC : detect removed IDs
+    alt anything added, changed or removed
+      CC -> CC : CTag = new GUID
+    end
+    deactivate CC
+  else HttpRequestException
+    S -> S : log warning, keep previous cache
+  else unexpected exception (e.g. unknown JSON shape)
+    S -> S : log error, keep previous cache
+  end
+  S -> S : delay PollIntervalSeconds (default 30 s)
+end
+@enduml

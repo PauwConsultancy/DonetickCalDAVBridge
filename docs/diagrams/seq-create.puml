@@ -1,0 +1,50 @@
+@startuml seq-create
+!include style.iuml
+
+title Create a task from the client (PUT on an unknown resource)
+
+autonumber "<b>00"
+participant "CalDAV client" as C
+participant "PutHandler" as PH
+participant "VTodoMapper" as VM
+participant "DonetickApiClient" as API
+participant "Donetick" as DT
+participant "ChoreCache" as CC
+participant "CalendarResolver" as CR
+
+C -> PH : PUT /caldav/calendars/{user}/{slug}/{client-uuid}.ics\nBEGIN:VTODO UID:{client-uuid} SUMMARY:... DUE:...
+PH -> PH : size guard (<= 1 MB), else 413
+PH -> PH : parse with Ical.Net, else 400
+PH -> PH : ResolveChoreId(path, UID)\n1. donetick-{id}.ics in path\n2. UID donetick-{id}@donetick\n3. UID map lookup
+note right of PH : none matches, so this is a new task
+PH -> PH : STATUS is COMPLETED?
+note right of PH : no, so continue with create
+PH -> VM : ToChoreLiteRequest(vtodo)
+VM --> PH : {name, description?, dueDate? (yyyy-MM-dd)}
+PH -> API : CreateChoreAsync(request)
+API -> DT : POST /eapi/v1/chore
+DT --> API : 200 DonetickChore {id: 42, ...}
+API --> PH : created
+PH -> CC : UpsertChore(created)  (new ETag, new CTag)
+PH -> CC : MapUid(client-uuid, 42)
+PH -> CR : GetSlugForChore(created)
+note right of CR
+  New chores have no labels via the eAPI,
+  so the slug is always "tasks".
+end note
+PH --> C : 201 Created\nLocation: /caldav/calendars/{user}/tasks/donetick-42.ics\nETag: "..."
+
+== Follow-up within the same process lifetime ==
+C -> PH : PUT .../{client-uuid}.ics (edit before the client switched to the canonical URL)
+PH -> CC : GetIdByUid(client-uuid)
+CC --> PH : 42
+PH -> PH : continue as update of chore 42
+
+== Error handling ==
+alt Donetick returns an error
+  API --> PH : HttpRequestException
+  PH --> C : 502 Bad Gateway
+else Donetick returns an empty body
+  PH --> C : 502 Bad Gateway
+end
+@enduml

@@ -1,0 +1,21 @@
+@startsalt url-namespace
+title HTTP / CalDAV URL namespace
+{
+{T
++ <b>Path                              | <b>Resource                          | <b>Auth  | <b>Handled by
++ /  and  /health                      | HTML status page                     | no    | StatusPageHandler
++ /health/json                         | JSON health (200 / 503)              | no    | StatusPageHandler
++ /.well-known/caldav                  | 301 redirect to /caldav/             | no    | WellKnownHandler
++ /caldav/                             | Service root (DAV collection)        | yes * | PropFindHandler
+++ principals/&#123;user&#125;/                  | Principal                            | yes   | PropFindHandler
+++ calendars/&#123;user&#125;/                   | Calendar home                        | yes   | PropFindHandler
++++ tasks/                             | Default calendar (always present)    | yes   | PropFind / Report
+++++ donetick-&#123;id&#125;.ics                 | VTODO resource                       | yes   | Get / Put / Delete
+++++ &#123;client-uuid&#125;.ics                 | New task from client (PUT)           | yes   | Put (UID map)
++++ &#123;label-slug&#125;/                      | Label calendar (GroupByLabel only)   | yes   | PropFind / Report
+++++ donetick-&#123;id&#125;.ics                 | VTODO resource                       | yes   | Get / Put / Delete
+}
+--
+* OPTIONS on any /caldav path is answered without authentication.
+}
+@endsalt

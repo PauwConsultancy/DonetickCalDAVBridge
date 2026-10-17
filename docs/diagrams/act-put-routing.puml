@@ -1,0 +1,67 @@
+@startuml act-put-routing
+!include style.iuml
+
+title PUT decision logic (PutHandler.HandleAsync)
+
+start
+if (Content-Length > 1 MB?) then (yes)
+  :413 Payload Too Large;
+  stop
+endif
+:Read body (max 1 MB);
+if (more data after 1 MB?) then (yes)
+  :413 Payload Too Large;
+  stop
+endif
+:Parse first VTODO with Ical.Net;
+if (parse failed or no VTODO?) then (yes)
+  :400 Bad Request;
+  stop
+endif
+
+partition "ResolveChoreId" {
+  if (path ends with donetick-{id}.ics?) then (yes)
+    :id from path;
+  elseif (UID is donetick-{id}@donetick?) then (yes)
+    :id from UID;
+  elseif (UID found in UID map?) then (yes)
+    :id from map;
+  else
+    :no id;
+  endif
+}
+
+if (id resolved?) then (yes)
+  if (STATUS = COMPLETED?) then (yes)
+    :POST /eapi/v1/chore/{id}/complete;
+    :GET all chores, UpdateChores;
+    :204, no ETag;
+  else (no)
+    :PUT /eapi/v1/chore/{id} with
+    name, description, dueDate;
+    :UpsertChore(updated);
+    :204 + ETag;
+  endif
+else (no)
+  if (STATUS = COMPLETED?) then (yes)
+    :Ignore
+    (Apple recurring-completion copy);
+    :204;
+  else (no)
+    :POST /eapi/v1/chore;
+    if (response body empty?) then (yes)
+      :502;
+      stop
+    endif
+    :UpsertChore(created);
+    :MapUid(UID, id);
+    :201 + Location + ETag;
+  endif
+endif
+stop
+
+note right
+  Any HttpRequestException from the
+  Donetick client results in 502.
+end note
+@enduml

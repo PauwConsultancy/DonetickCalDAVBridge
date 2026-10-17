@@ -1,0 +1,62 @@
+@startuml components
+!include <C4/C4_Component>
+
+LAYOUT_TOP_DOWN()
+HIDE_STEREOTYPE()
+
+title Component view - DonetickCalDav process
+
+System_Ext(client, "CalDAV client", "Apple Reminders, Calendar.app, Thunderbird, ...")
+System_Ext(monitor, "Monitoring / browser", "Status page and health probe")
+System_Ext(donetick, "Donetick", "eAPI v1 /eapi/v1/chore")
+
+Container_Boundary(app, "DonetickCalDav - ASP.NET Core 10 on Kestrel (single process, no persistence)") {
+
+  Component(mw, "CalDavMiddleware", "Middleware (singleton)", "Path and method routing, DAV header, auth gate, MOVE/MKCOL rejection")
+  Component(auth, "CalDavAuthenticationHandler", "AuthenticationHandler", "HTTP Basic, constant-time comparison")
+  Component(status, "StatusPageHandler", "Singleton", "HTML status page, JSON health")
+  Component(disc, "WellKnownHandler / OptionsHandler", "Static", "Discovery redirect and capabilities")
+
+  Component(read, "PropFindHandler / ReportHandler / GetHandler", "Scoped per request", "Read path: 207 Multi-Status and ICS bodies")
+  Component(write, "PutHandler / DeleteHandler", "Scoped per request", "Write path: create, update, complete, delete")
+  Component(pp, "PropPatchHandler", "Scoped per request", "Accepts and rejects every property change")
+
+  Component(resolver, "CalendarResolver", "Singleton", "Virtual calendars per label, slugs, colours, per-calendar CTag")
+  Component(support, "PathHelper / DavXmlReader / DavXmlWriter", "Static helpers", "ID, UUID and slug extraction; WebDAV XML in and out")
+  Component(vtodo, "VTodoMapper / StatusMapper / PriorityMapper", "Static, Ical.Net", "Chore to VTODO and VTODO to ChoreLiteRequest")
+
+  Component(cache, "ChoreCache", "Singleton, lock-guarded", "Chores with ETags, collection CTag, client UID map")
+  Component(sync, "ChoreSyncService", "BackgroundService", "Startup sync with retry, then poll every PollIntervalSeconds")
+  Component(tracker, "ClientTracker", "Singleton, bounded to 100", "Per-client request counts for the status page")
+  Component(api, "DonetickApiClient", "Typed HttpClient + Polly retry", "GET, POST, PUT, DELETE, POST complete")
+}
+
+Rel(client, mw, "CalDAV", "HTTP(S)")
+Rel(monitor, mw, "GET /, /health, /health/json", "HTTP(S)")
+
+Rel(mw, disc, "/.well-known/caldav, OPTIONS")
+Rel(mw, status, "/, /health, /health/json")
+Rel(mw, auth, "AuthenticateAsync")
+Rel(mw, tracker, "RecordRequest")
+Rel(mw, read, "PROPFIND, REPORT, GET, HEAD")
+Rel(mw, write, "PUT, DELETE")
+Rel(mw, pp, "PROPPATCH")
+
+Rel(read, resolver, "Calendars and members")
+Rel(read, cache, "Chores, ETags")
+Rel(read, vtodo, "ToIcsString")
+Rel(read, support, "Uses")
+Rel(write, vtodo, "ToChoreLiteRequest")
+Rel(write, cache, "Upsert, invalidate, map UID")
+Rel(write, api, "Create, update, complete, delete")
+Rel(write, resolver, "Slug for Location header")
+
+Rel(resolver, cache, "GetAllChores, CTag")
+Rel(sync, api, "GetAllChoresAsync")
+Rel(sync, cache, "UpdateChores")
+Rel(status, cache, "Counts")
+Rel(status, tracker, "Active clients")
+
+Rel(api, donetick, "REST/JSON", "secretkey header")
+
+@enduml

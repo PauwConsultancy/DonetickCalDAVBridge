@@ -332,6 +332,9 @@ src/DonetickCalDav/
 - **Single-user** — designed for a single Donetick account; all CalDAV clients share the same task list
 - **Apple tag limitation** — Apple Reminders does not display `CATEGORIES` or `X-APPLE-HASHTAGS` from CalDAV accounts (only iCloud). The `GroupByLabel` feature works around this by using separate calendar collections.
 
+## Documentation
+The functional and technical design, with PlantUML diagrams, are in [docs/](docs/README.md).
+
 ## License
 
 MIT

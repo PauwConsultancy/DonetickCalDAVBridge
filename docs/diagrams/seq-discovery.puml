@@ -1,0 +1,75 @@
+@startuml seq-discovery
+!include style.iuml
+
+title Account discovery and initial load (as supported by the handlers)
+
+autonumber "<b>00"
+participant "CalDAV client\n(e.g. Reminders)" as C
+participant "CalDavMiddleware" as MW
+participant "Auth handler" as AU
+participant "PropFindHandler" as PF
+participant "ReportHandler" as RP
+participant "CalendarResolver" as CR
+participant "ChoreCache" as CC
+
+== Service discovery (RFC 6764), no credentials ==
+C -> MW : PROPFIND /.well-known/caldav
+MW --> C : 301 Location: /caldav/\nDAV: 1, 3, access-control, calendar-access
+
+C -> MW : OPTIONS /caldav/
+MW --> C : 200 Allow: OPTIONS, GET, HEAD, PUT, DELETE,\nPROPFIND, PROPPATCH, REPORT + DAV header
+
+C -> MW : PROPFIND /caldav/ (no Authorization)
+MW -> AU : AuthenticateAsync("BasicAuth")
+AU --> MW : Fail("Missing Authorization header")
+MW --> C : 401 WWW-Authenticate: Basic realm="DonetickCalDAV"
+
+== Principal and calendar home (Basic Auth on every request) ==
+C -> MW : PROPFIND /caldav/  Depth: 0
+MW -> AU : AuthenticateAsync
+AU --> MW : Success
+MW -> PF : HandleAsync
+PF --> C : 207 current-user-principal = /caldav/principals/{user}/
+
+C -> MW : PROPFIND /caldav/principals/{user}/
+MW -> PF : HandleAsync
+PF --> C : 207 calendar-home-set = /caldav/calendars/{user}/
+
+C -> MW : PROPFIND /caldav/calendars/{user}/  Depth: 1
+MW -> PF : HandleAsync
+PF -> CR : GetCalendars()
+CR -> CC : GetAllChores(), CTag
+CR --> PF : [VirtualCalendar...]
+PF --> C : 207 home + one response per calendar\n(displayname, calendar-color, calendar-order,\ngetctag, sync-token, comp-set = VTODO)
+
+== Resource listing and fetch, per calendar ==
+C -> MW : PROPFIND /caldav/calendars/{user}/tasks/  Depth: 1
+MW -> PF : HandleAsync
+PF -> CR : GetChoresForCalendar("tasks")
+PF --> C : 207 collection + donetick-{id}.ics hrefs with getetag
+
+C -> MW : REPORT calendar-multiget (list of hrefs)
+MW -> RP : HandleAsync
+loop each href
+  RP -> CC : GetChore(id)
+  RP -> RP : VTodoMapper.ToIcsString(chore)
+end
+RP --> C : 207 calendar-data (VCALENDAR / VTODO) + getetag
+
+== Steady state ==
+loop client refresh interval
+  C -> MW : PROPFIND collection  Depth: 0  (getctag)
+  MW -> PF : HandleAsync
+  PF --> C : 207 getctag
+  alt CTag changed
+    C -> MW : PROPFIND Depth: 1 (getetag) then REPORT calendar-multiget for changed hrefs
+  else CTag unchanged
+    C -> C : nothing to do
+  end
+end
+
+note over C, CC
+  Every read is answered from ChoreCache. No request to Donetick is made
+  on the read path; freshness depends on the background sync interval.
+end note
+@enduml

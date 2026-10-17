@@ -1,0 +1,32 @@
+@startuml system-context
+!include <C4/C4_Context>
+
+LAYOUT_TOP_DOWN()
+HIDE_STEREOTYPE()
+
+title System context - Donetick CalDAV Bridge
+
+Person(owner, "Task owner", "Plans and completes chores from a calendar / reminders app")
+Person(operator, "Operator", "Deploys and configures the bridge on a homelab host")
+
+System_Ext(apple, "Apple Reminders / Calendar.app", "macOS and iOS CalDAV client. Primary and only tested client.")
+System_Ext(otherClients, "Other CalDAV clients", "Thunderbird, DAVx5, GNOME Evolution. Expected to work, untested.")
+
+System(bridge, "Donetick CalDAV Bridge", "Single-user adapter that exposes Donetick chores as CalDAV VTODO resources")
+
+System_Ext(donetick, "Donetick", "Self-hosted chore manager. Source of truth for chores, labels, priority and recurrence.")
+System_Ext(monitor, "Monitoring", "Uptime Kuma or similar HTTP probe")
+
+Rel(owner, apple, "Views, creates, edits, completes and deletes tasks")
+Rel(owner, otherClients, "Same, with other clients")
+Rel(owner, donetick, "Manages labels, priority and recurrence", "Donetick UI")
+
+Rel(apple, bridge, "CalDAV (PROPFIND, REPORT, GET, PUT, DELETE)", "HTTPS + Basic Auth")
+Rel(otherClients, bridge, "CalDAV", "HTTP(S) + Basic Auth")
+Rel(monitor, bridge, "GET /health/json", "HTTP(S), no auth")
+Rel(operator, bridge, "Environment variables, status page", "Docker / browser")
+
+Rel(bridge, donetick, "Reads and writes chores", "REST/JSON eAPI v1, secretkey header")
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,36 @@
+@startuml act-calendar-assignment
+!include style.iuml
+
+title Calendar assignment of a chore (CalendarResolver)
+
+start
+if (GroupByLabel enabled?) then (no)
+  :Calendar "tasks"
+  display name = CalendarName
+  colour = CalendarColor;
+  stop
+else (yes)
+endif
+
+switch (number of labels on the chore)
+case (0)
+  :Default calendar "tasks"
+  display name = DefaultCalendarName;
+case (exactly 1)
+  :slug = ToSlug(label name);
+  note right
+    1. Unicode decompose, drop accents
+    2. lower-case, spaces to dashes
+    3. keep only a-z, 0-9 and dashes
+    4. collapse dashes, trim
+    5. empty result becomes "label"
+  end note
+  :Label calendar {slug} with
+  display name = label name
+  colour = hue from SHA-256(label name);
+case (2 or more)
+  :Default calendar "tasks"
+  (never duplicated across lists);
+endswitch
+stop
+@enduml

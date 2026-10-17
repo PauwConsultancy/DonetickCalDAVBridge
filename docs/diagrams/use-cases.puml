@@ -1,0 +1,59 @@
+@startuml use-cases
+!include style.iuml
+
+left to right direction
+title Use cases - Donetick CalDAV Bridge
+
+actor "Task owner\n(via CalDAV client)" as owner
+actor "Operator" as operator
+actor "Monitoring tool" as monitor
+actor "Timer" as timer
+
+actor "Donetick\n(eAPI)" as donetick <<system>>
+
+rectangle "Donetick CalDAV Bridge" {
+  usecase "UC-01\nConnect CalDAV account" as UC01
+  usecase "UC-02\nView tasks" as UC02
+  usecase "UC-07\nBrowse tasks per label\n(GroupByLabel, extends UC-02)" as UC07
+  usecase "UC-03\nCreate task" as UC03
+  usecase "UC-04\nEdit task" as UC04
+  usecase "UC-05\nComplete task" as UC05
+  usecase "UC-06\nDelete task" as UC06
+  usecase "UC-08\nMove task to other list\n(rejected)" as UC08
+  usecase "UC-09\nChange list colour / order\n(rejected)" as UC09
+  usecase "UC-10\nConfigure and deploy" as UC10
+  usecase "UC-11\nMonitor bridge" as UC11
+  usecase "UC-12\nSynchronise cache" as UC12
+}
+
+owner --> UC01
+owner --> UC02
+owner --> UC03
+owner --> UC04
+owner --> UC05
+owner --> UC06
+owner --> UC07
+owner --> UC08
+owner --> UC09
+
+operator --> UC10
+operator --> UC11
+monitor --> UC11
+timer --> UC12
+
+UC03 --> donetick
+UC04 --> donetick
+UC05 --> donetick
+UC06 --> donetick
+UC12 --> donetick
+
+note right of UC02
+  Served from the in-memory cache;
+  no Donetick call per request.
+end note
+
+note right of UC08
+  WebDAV MOVE answered with 403.
+  The eAPI cannot change labels.
+end note
+@enduml

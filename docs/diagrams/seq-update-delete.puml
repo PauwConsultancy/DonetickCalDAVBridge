@@ -1,0 +1,46 @@
+@startuml seq-update-delete
+!include style.iuml
+
+title Edit and delete a task
+
+autonumber "<b>00"
+participant "CalDAV client" as C
+participant "PutHandler" as PH
+participant "DeleteHandler" as DH
+participant "DonetickApiClient" as API
+participant "Donetick" as DT
+participant "ChoreCache" as CC
+
+== Edit (STATUS is not COMPLETED) ==
+C -> PH : PUT .../donetick-42.ics  SUMMARY, DESCRIPTION, DUE
+PH -> PH : ResolveChoreId -> 42
+PH -> PH : ToChoreLiteRequest(vtodo)
+note right of PH
+  Only name, description and due date (date part)
+  are sent. Priority, status, categories and RRULE
+  in the VTODO are ignored.
+end note
+PH -> API : UpdateChoreAsync(42, request)
+API -> DT : PUT /eapi/v1/chore/42
+DT --> API : 200 DonetickChore
+PH -> CC : UpsertChore(updated)
+PH --> C : 204 No Content, ETag: "..."
+
+== Delete ==
+C -> DH : DELETE .../donetick-42.ics  (or .../{client-uuid}.ics)
+DH -> DH : ResolveChoreIdFromPath\n(donetick-{id}.ics, else UID map)
+alt id resolved
+  DH -> API : DeleteChoreAsync(42)
+  API -> DT : DELETE /eapi/v1/chore/42
+  DT --> API : 2xx
+  DH -> CC : InvalidateChore(42)  (CTag changes)
+  DH --> C : 204 No Content
+else id not resolvable
+  DH --> C : 404 Not Found
+end
+
+alt Donetick error on any write
+  API --> PH : HttpRequestException
+  PH --> C : 502 Bad Gateway
+end
+@enduml

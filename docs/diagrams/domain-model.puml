@@ -1,0 +1,139 @@
+@startuml domain-model
+!include style.iuml
+
+title Domain and cache model
+
+set separator none
+hide empty methods
+skinparam classAttributeIconSize 0
+
+package "Donetick.Models  (eAPI contract)" {
+
+  class DonetickChore {
+    + Id : int
+    + Name : string
+    + Description : string?
+    + FrequencyType : string
+    + Frequency : int
+    + FrequencyMetadata : DonetickFrequencyMetadata?
+    + NextDueDate : DateTime?
+    + IsRolling : bool
+    + AssignedTo : int?
+    + IsActive : bool
+    + Status : int
+    + Priority : int
+    + CreatedAt : DateTime
+    + UpdatedAt : DateTime
+    + CreatedBy : int
+    + CircleId : int
+    + LabelsV2 : List<DonetickLabel>?
+    + CompletionWindow : int?
+    + DeadlineOffset : int?
+    + ProjectId : int?
+  }
+
+  class DonetickLabel {
+    + Id : int
+    + Name : string
+  }
+
+  class DonetickFrequencyMetadata {
+    + Days : List<string?>?
+    + Months : List<string?>?
+    + Unit : string?
+    + Time : string?  <<HH:mm>>
+    + Timezone : string?  <<IANA id>>
+    + WeekNumbers : List<int>?
+    + Occurrences : List<int?>?
+  }
+
+  class ChoreLiteRequest <<write payload>> {
+    + Name : string
+    + Description : string?
+    + DueDate : string?  <<yyyy-MM-dd>>
+  }
+
+  class ChoreStatus <<constants>> {
+    NoStatus = 0
+    InProgress = 1
+    Paused = 2
+    PendingApproval = 3
+  }
+
+  class ChorePriority <<constants>> {
+    None = 0
+    Low = 1
+    Medium = 2
+    High = 3
+    Urgent = 4
+  }
+
+  DonetickChore "1" *-- "0..*" DonetickLabel : labelsV2
+  DonetickChore "1" *-- "0..1" DonetickFrequencyMetadata : frequencyMetadata
+  DonetickChore ..> ChoreStatus : status
+  DonetickChore ..> ChorePriority : priority
+}
+
+package "Cache" {
+
+  class CachedChore <<record, immutable>> {
+    + Chore : DonetickChore
+    + ETag : string
+  }
+
+  class ChoreCache <<singleton>> {
+    - _chores : Dictionary<int, CachedChore>
+    - _uidToId : Dictionary<string, int>
+    - _ctag : string
+    --
+    + CTag : string
+    + UpdateChores(chores)
+    + GetAllChores() : List<CachedChore>
+    + GetChore(id) : CachedChore?
+    + UpsertChore(chore)
+    + InvalidateChore(id)
+    + MapUid(uid, choreId)
+    + GetIdByUid(uid) : int?
+  }
+
+  ChoreCache "1" o-- "0..*" CachedChore
+  CachedChore --> DonetickChore
+}
+
+package "CalDav.Handlers" {
+
+  class VirtualCalendar <<record>> {
+    + Slug : string
+    + DisplayName : string
+    + Color : string  <<#RRGGBBAA>>
+    + CTag : string
+  }
+
+  class CalendarResolver <<singleton>> {
+    + {static} DefaultSlug = "tasks"
+    + GroupByLabel : bool
+    --
+    + GetCalendars() : List<VirtualCalendar>
+    + GetChoresForCalendar(slug) : List<CachedChore>
+    + GetCTagForCalendar(slug) : string
+    + IsValidCalendar(slug) : bool
+    + {static} GetSlugForChore(chore) : string
+    + {static} ToSlug(labelName) : string
+    + {static} GenerateColor(labelName) : string
+  }
+
+  CalendarResolver ..> VirtualCalendar : derives on demand
+  CalendarResolver --> ChoreCache : reads
+}
+
+note bottom of CachedChore
+  ETag = first 16 hex chars of
+  SHA-256("{Id}-{UpdatedAt:O}-{Status}-
+  {IsActive}-{Name}-{NextDueDate:O or "none"}")
+end note
+
+note bottom of VirtualCalendar
+  Not stored. Rebuilt from the cache
+  on every request that needs it.
+end note
+@enduml

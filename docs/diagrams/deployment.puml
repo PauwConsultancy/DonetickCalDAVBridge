@@ -1,0 +1,55 @@
+@startuml deployment
+!include style.iuml
+
+title Deployment view - reference homelab setup
+
+node "Mac / iPhone / iPad" as device {
+  component "Reminders.app\n(remindd / dataaccessd)" as reminders
+  component "Calendar.app\n(CalendarAgent)" as calendar
+}
+
+cloud "Tailnet / LAN" as net
+
+node "Homelab host (e.g. Unraid)" as host {
+
+  node "tailscaled (optional)" as ts {
+    component "tailscale serve\nHTTPS :443 -> http://localhost:5232" as tsserve
+  }
+
+  node "Docker engine" as docker {
+    node "donetick-caldav container\nmcr.microsoft.com/dotnet/aspnet:10.0" as bridgeC {
+      artifact "DonetickCalDav.dll\n(Kestrel :5232, HTTP or HTTPS)" as bridge
+      folder "/certs (ro, optional)" as certs
+    }
+    node "donetick container" as donetickC {
+      component "Donetick server\n/eapi/v1/chore" as donetick
+    }
+  }
+}
+
+node "Monitoring host" as mon {
+  component "Uptime Kuma" as kuma
+}
+
+reminders --> net : CalDAV over HTTPS
+calendar --> net : CalDAV over HTTPS
+net --> tsserve : option A: Tailscale serve
+net --> bridge : option B: built-in TLS (PEM or PFX)
+tsserve --> bridge : HTTP
+bridge ..> certs : reads at startup
+bridge --> donetick : HTTP(S) REST\nsecretkey header
+kuma --> bridge : GET /health/json
+
+note right of bridge
+  Configuration via environment variables
+  (Donetick~__*, CalDav~__*, Logging~__*).
+  State lives in memory only; a restart
+  rebuilds it from Donetick.
+end note
+
+note bottom of net
+  Option C: a reverse proxy (Caddy, nginx,
+  Traefik) terminates TLS and forwards to :5232.
+  Apple clients refuse Basic Auth over plain HTTP.
+end note
+@enduml

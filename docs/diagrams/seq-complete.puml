@@ -1,0 +1,52 @@
+@startuml seq-complete
+!include style.iuml
+
+title Complete a task (including the Apple recurring-task quirk)
+
+autonumber "<b>00"
+participant "Apple Reminders" as C
+participant "PutHandler" as PH
+participant "DonetickApiClient" as API
+participant "Donetick" as DT
+participant "ChoreCache" as CC
+
+note over C
+  Ticking off a task may produce two PUTs: one for the original
+  resource, and for recurring tasks an extra COMPLETED copy
+  under a new client-generated UID.
+end note
+
+== PUT on the original resource ==
+C -> PH : PUT .../donetick-42.ics  STATUS:COMPLETED
+PH -> PH : ResolveChoreId -> 42 (path match)
+PH -> PH : StatusMapper.FromVTodoStatus("COMPLETED")\n-> shouldComplete = true
+PH -> API : CompleteChoreAsync(42)
+API -> DT : POST /eapi/v1/chore/42/complete
+DT --> API : 2xx
+note right of DT
+  Donetick records the completion and,
+  for recurring chores, advances
+  NextDueDate and resets the status.
+end note
+PH -> API : GetAllChoresAsync()
+API -> DT : GET /eapi/v1/chore
+DT --> API : all chores
+PH -> CC : UpdateChores(all)  (CTag changes)
+PH --> C : 204 No Content (no ETag header)
+note right of C
+  Without an ETag the client cannot treat its local
+  COMPLETED copy as current, so it refetches and
+  picks up the new DUE and NEEDS-ACTION.
+end note
+
+== Extra COMPLETED copy (recurring tasks) ==
+C -> PH : PUT .../{new-uuid}.ics  STATUS:COMPLETED  UID:{new-uuid}
+PH -> PH : ResolveChoreId -> null (unknown UID)
+PH -> PH : shouldComplete = true
+PH --> C : 204 No Content (ignored, nothing created)
+
+== Next client refresh ==
+C -> C : sees new CTag / missing ETag
+C -> C : refetch donetick-42.ics via PROPFIND / REPORT (read path)
+note right of C : Task reappears with the next due date
+@enduml

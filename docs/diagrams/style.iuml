@@ -1,0 +1,55 @@
+' Shared look and feel for all non-C4 diagrams in this folder.
+' Include with:  !include style.iuml
+
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam defaultTextAlignment left
+skinparam wrapWidth 420
+skinparam maxMessageSize 320
+
+skinparam ArrowColor #3F4A5A
+skinparam ArrowFontColor #3F4A5A
+skinparam ArrowFontSize 11
+
+skinparam TitleFontSize 16
+skinparam TitleFontStyle bold
+
+skinparam NoteBackgroundColor #FFF8DC
+skinparam NoteBorderColor #C9B458
+
+skinparam ActorBorderColor #3F4A5A
+skinparam ActorBackgroundColor #E8EEF7
+
+skinparam UsecaseBackgroundColor #E8EEF7
+skinparam UsecaseBorderColor #4A6FA5
+
+skinparam RectangleBorderColor #4A6FA5
+skinparam PackageBorderColor #4A6FA5
+skinparam NodeBorderColor #4A6FA5
+skinparam NodeBackgroundColor #F4F7FB
+skinparam ComponentBorderColor #4A6FA5
+skinparam ComponentBackgroundColor #E8EEF7
+skinparam ArtifactBackgroundColor #FFFFFF
+skinparam DatabaseBackgroundColor #E8EEF7
+
+skinparam ClassBackgroundColor #F4F7FB
+skinparam ClassBorderColor #4A6FA5
+skinparam ClassHeaderBackgroundColor #E8EEF7
+skinparam StereotypeCBackgroundColor #ADD1B2
+
+skinparam ParticipantBackgroundColor #E8EEF7
+skinparam ParticipantBorderColor #4A6FA5
+skinparam SequenceGroupBorderColor #8A97A8
+skinparam SequenceBoxBorderColor #8A97A8
+skinparam SequenceBoxBackgroundColor #FAFBFD
+skinparam SequenceLifeLineBorderColor #8A97A8
+skinparam SequenceDividerBackgroundColor #EEF1F5
+
+skinparam ActivityBackgroundColor #E8EEF7
+skinparam ActivityBorderColor #4A6FA5
+skinparam ActivityDiamondBackgroundColor #FFFFFF
+skinparam ActivityDiamondBorderColor #4A6FA5
+skinparam PartitionBorderColor #8A97A8
+
+skinparam StateBackgroundColor #E8EEF7
+skinparam StateBorderColor #4A6FA5
