@@ -491,7 +491,7 @@ TLS can be provided in three ways: `tailscale serve` in front of plain HTTP, bui
 The counts are `[Fact]` and `[Theory]` attributes (162 in total); theories run more cases. Helpers: `TestChoreFactory` (named chore scenarios on a fixed base date) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
 
 ### 16.2 Coverage gaps
-No tests exist for `PropFindHandler`, `ReportHandler`, `PropPatchHandler`, `CalDavMiddleware`, `CalDavAuthenticationHandler`, `StatusPageHandler`, `ChoreSyncService` or the startup composition. There are no integration tests against a CalDAV client or a Donetick instance; `instructions.md` states that manual verification against a real Donetick is the intended complement.
+No tests exist for `PropFindHandler`, `ReportHandler`, `PropPatchHandler`, `CalDavMiddleware`, `CalDavAuthenticationHandler`, `StatusPageHandler`, `ChoreSyncService` or the startup composition. There are no integration tests against a CalDAV client or a Donetick instance yet; the [testing strategy](testing-strategy.md) plans them.
 
 `VTodoMapperTests.ToIcsString_ConcurrentCalls_DoNotThrow` serialises 20,000 chores in parallel and fails if a shared serializer is reintroduced.
 

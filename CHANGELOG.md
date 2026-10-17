@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - Added `docs/` with a functional design, a technical design, a findings report and PlantUML diagrams (sources and rendered SVGs), reverse engineered from 0.7.1
 - README: link to the design documentation
+- Added a testing strategy (`docs/testing-strategy.md`) and an Apple acceptance checklist (`docs/testing/apple-acceptance.md`)
 
 ## [0.7.1] — 2026-04-20
 

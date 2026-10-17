@@ -1,0 +1,37 @@
+@startuml test-levels
+!include style.iuml
+
+skinparam ranksep 18
+
+title Test levels - many fast checks at the bottom, few slow ones at the top
+
+skinparam rectangle {
+  BorderColor #4A6FA5
+  RoundCorner 6
+}
+
+rectangle "<b>L6  Manual Apple acceptance</b>\nReminders and Calendar.app on macOS and iOS\nper release, by hand" as L6 #F4DCDC
+rectangle "<b>L5  Contract tests against a real Donetick</b>\neAPI shape and semantics\nweekly and on a Donetick upgrade" as L5 #F7E6D4
+rectangle "<b>L4  Container end-to-end</b>\nbuilt image, independent CalDAV client, HTTPS\nnightly and on tags" as L4 #F9F0D2
+rectangle "<b>L3  Apple traffic replay</b>\nrecorded client sessions through the integration harness\nevery push" as L3 #E3F0DA
+rectangle "<b>L2  Integration (in-process)</b>\nreal pipeline over HTTP, Donetick as an HTTP stub, fake time\nevery push" as L2 #DCEAF4
+rectangle "<b>L1b  Snapshot (wire format)</b>\nICS and multistatus XML as approved files\nevery push" as L1b #E6E3F3
+rectangle "<b>L1  Unit</b>\nmappers, resolver, cache, XML, handlers with mocks\nevery push" as L1 #EEF1F5
+
+L6 -[hidden]down-> L5
+L5 -[hidden]down-> L4
+L4 -[hidden]down-> L3
+L3 -[hidden]down-> L2
+L2 -[hidden]down-> L1b
+L1b -[hidden]down-> L1
+
+note right of L6
+  Highest realism,
+  highest cost per run
+end note
+
+note right of L1
+  Fastest feedback,
+  cheapest to maintain
+end note
+@enduml

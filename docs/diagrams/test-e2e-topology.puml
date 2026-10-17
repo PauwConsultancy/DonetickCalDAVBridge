@@ -1,0 +1,35 @@
+@startuml test-e2e-topology
+!include style.iuml
+
+title Container end-to-end and contract topology (L4, L5)
+
+node "CI runner or developer machine (Docker)" {
+  node "compose network: e2e" {
+    node "bridge\nimage built from Dockerfile" as bridge
+    node "donetick-stub\nWireMock.Net image,\nsame mappings as L2" as stub
+    node "donetick-real\ndonetick image + SQLite,\npinned version" as real
+    node "e2e-runner\npytest + caldav library" as runner
+    folder "certs\nself-signed, test only" as certs
+  }
+}
+
+runner --> bridge : CalDAV over HTTPS\n(Basic auth)
+bridge --> stub : eAPI\n(profile: stub)
+bridge ..> real : eAPI\n(profile: contract)
+runner ..> stub : admin API:\nseed and verify
+runner ..> real : eAPI:\nseed and verify
+bridge ..> certs : mounted read-only
+
+note right of real
+  Contract profile only.
+  Open question: provisioning
+  a user and an API key
+  automatically.
+end note
+
+note bottom of runner
+  Also checks container behaviour:
+  health endpoint, restart rebuilds the cache,
+  invalid configuration exits non-zero.
+end note
+@enduml

@@ -1,0 +1,33 @@
+@startuml test-apple-replay
+!include style.iuml
+
+title Apple traffic capture and replay (L3)
+
+start
+
+partition "Capture (once per macOS or iOS major version)" {
+  :Run the bridge against a seeded test Donetick;
+  :Route the Apple device through mitmproxy
+  (reverse proxy with TLS) or enable the capture middleware;
+  :Run the scripted session: add account, browse lists,
+  create, edit, complete a recurring task, delete, drag;
+  :Export the request and response pairs;
+}
+
+partition "Sanitise" {
+  :Remove Authorization headers and host names;
+  :Normalise volatile values
+  (client UIDs, DTSTAMP, CTag, ETag);
+  :Store as fixture under
+  tests/fixtures/apple/<client>/<scenario>;
+}
+
+partition "Replay (every build)" {
+  :Seed WireMock with the Donetick state of the recording;
+  :Send the recorded requests in order through the integration harness;
+  :Assert status codes and key headers;
+  :Compare response bodies with approved snapshots;
+}
+
+stop
+@enduml

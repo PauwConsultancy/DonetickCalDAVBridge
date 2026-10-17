@@ -22,7 +22,7 @@ This is deliberate — see "In-memory cache only" below.
 - **No ORM.** No database. No persistent store of any kind inside this service.
 - **Ical.Net 5** for VTODO parsing and serialisation (undocumented exception surface — wrap broadly; create a `CalendarSerializer` per call, a shared one is not thread-safe)
 - **Microsoft.Extensions.Http.Resilience** (Polly) for retry — not a custom retry loop
-- **xUnit + FluentAssertions** for tests
+- **xUnit + FluentAssertions + NSubstitute** for tests (moving to xUnit v3 on Microsoft.Testing.Platform, see [docs/testing-strategy.md](docs/testing-strategy.md))
 
 If a change requires adding persistence, an ORM, or a second user, stop and ask first —
 it is out of scope for this project's stated purpose.
@@ -167,12 +167,20 @@ or making the project accessible from the public internet by default.
 
 ## Testing
 
-- xUnit + FluentAssertions under `tests/DonetickCalDav.Tests`
+- Approach: [docs/testing-strategy.md](docs/testing-strategy.md) (accepted 2026-10-17). It defines the
+  test levels (unit, snapshot, in-process integration, Apple traffic replay, container end-to-end,
+  contract tests against a real Donetick, manual Apple acceptance), the CI gates and the roadmap
+- Today: xUnit + FluentAssertions + NSubstitute unit tests under `tests/DonetickCalDav.Tests`;
+  the other levels are planned from phase 0 onwards
 - `dotnet test` must pass and compile with zero warnings before any commit
 - Mapping logic (VTODO ↔ ChoreLiteRequest, status, priority, recurrence-time preservation) is
   fully unit-tested — that is the riskiest code surface and the easiest to regress
-- Handler-level and integration tests are intentionally minimal — the app is small enough that
-  manual verification against a real Donetick instance catches what matters
+- Integration tests are no longer "intentionally minimal": the Ical.Net 5 upgrade showed that
+  wiring, wire-format and concurrency defects slip past unit tests and manual checks
+- Approved test dependencies (no need to ask again): xunit.v3, Microsoft.AspNetCore.Mvc.Testing,
+  WireMock.Net, Microsoft.Extensions.TimeProvider.Testing. The snapshot library is still open
+  (Verify licence, see the strategy chapter 13)
+- Every defect gets a test before the fix; open findings get characterization tests tagged `KnownIssue`
 
 ## MCP servers
 

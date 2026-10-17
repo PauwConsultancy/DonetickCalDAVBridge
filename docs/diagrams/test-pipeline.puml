@@ -1,0 +1,46 @@
+@startuml test-pipeline
+!include style.iuml
+
+title CI pipeline and quality gates
+
+start
+:Push or pull request;
+
+partition "Every push (target: under 5 minutes)" {
+  :Restore and build
+  (warnings as errors);
+  fork
+    :L1 unit + L1b snapshot;
+  fork again
+    :L2 integration + L3 replay;
+  fork again
+    :Vulnerable package check;
+  end fork
+  :Coverage report;
+  if (All gates met?) then (no)
+    :Fail the build;
+    stop
+  else (yes)
+  endif
+}
+
+partition "Main branch and tags" {
+  :Build container image;
+  :Scan image;
+}
+
+partition "Nightly and on tags" {
+  :L4 container end-to-end (stub profile);
+}
+
+partition "Weekly and on a Donetick release" {
+  :L5 contract tests against real Donetick;
+  :Mutation testing on core logic;
+}
+
+partition "Per release (manual)" {
+  :L6 Apple acceptance checklist;
+}
+
+stop
+@enduml

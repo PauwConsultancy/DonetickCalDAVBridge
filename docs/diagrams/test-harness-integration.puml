@@ -1,0 +1,46 @@
+@startuml test-harness-integration
+!include style.iuml
+
+title Integration test harness (L2) - one dotnet test process
+
+node "dotnet test process" {
+
+  package "Test code (xUnit)" {
+    component "Test case\nArrange / Act / Assert" as tc
+    component "CalDAV test client\nDAV request builders,\nXPath and ICS assertions" as dsl
+  }
+
+  package "WebApplicationFactory<Program>" {
+    component "TestServer\n(in place of Kestrel)" as ts
+    component "Real request pipeline\nCalDavMiddleware, Basic auth,\nhandlers, ChoreCache, CalendarResolver" as app
+    component "ChoreSyncService\n(real)" as sync
+    component "DonetickApiClient\n+ Polly retry (real)" as api
+  }
+
+  component "FakeTimeProvider\nretry delays, poll interval" as time
+  component "WireMock.Net server\nDonetick stand-in on localhost" as wm
+}
+
+tc --> dsl
+dsl --> ts : HttpClient\nwith Basic auth
+ts --> app
+app --> api
+sync --> api
+api --> wm : real HTTP\n/eapi/v1/chore
+time ..> api : TimeProvider\nfrom DI
+time ..> sync
+tc ..> wm : seed responses,\nverify requests
+tc ..> time : Advance()
+
+note right of wm
+  Fault injection per test:
+  5xx, timeouts, slow responses,
+  malformed or unknown JSON
+end note
+
+note bottom of app
+  Configuration is overridden with
+  in-memory settings: credentials,
+  GroupByLabel, AllDayEvents, ...
+end note
+@enduml
