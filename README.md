@@ -2,12 +2,8 @@
 
 A lightweight bridge that exposes [Donetick](https://donetick.com) tasks as CalDAV VTODO items, making them accessible in Apple Reminders, Thunderbird, and other CalDAV-compatible clients.
 
-> [!caution]
-> ## Vibe code warning
-I let Claude code write the whole project. I did some checks and balances, but I wouldn't trust exposing this to the internet. If you only run it internal or via something like Tailscale you should be kinda fine.
-Make backups! Don't come complaining to me if something gets f'ed up.
-I made it for my own needs and if you see benefits from it feel free to use.
-If you have improvements please share them.
+> [!note]
+> This project was largely AI-generated (Claude Code) with manual review. It works well for my needs, but I'd recommend running it on a private network (e.g. Tailscale) rather than exposing it to the internet. Make backups, use at your own risk, and feel free to contribute improvements.
 
 ## Why does this exist?
 I want recurrence from completion date not planned date some for tasks/chores and Donetick seems to be the tool for this. I like that Donetick can give me points for completing items, so I have additional motivation for doing them.
@@ -290,7 +286,7 @@ Alternatively, configure log rotation globally in `/etc/docker/daemon.json`:
 
 ## Building from Source
 
-Requirements: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 
 ```bash
 cd src/DonetickCalDav
@@ -330,7 +326,7 @@ src/DonetickCalDav/
 
 ## Limitations
 
-- **In-memory cache only** — there is no persistent storage; the cache rebuilds on restart
+- **In-memory cache only** — there is no persistent storage; the cache rebuilds on restart. This also means the UID-to-ID map used to resolve Apple-generated UUIDs on newly created tasks is ephemeral. The map only matters in the brief window between a client creating a task and receiving our `201 Location` response with the canonical `donetick-{id}.ics` URL; after that, clients use the canonical URL directly. Restarting the bridge during that window can cause a single follow-up PUT/DELETE from Apple to miss the mapping — the next sync cycle corrects it.
 - **External API constraints** — Donetick's eAPI only supports setting name, description, and due date on create/update. Priority, labels, and recurrence must be managed in Donetick directly.
 - **Moving tasks between lists** — when you drag a task to a different list in Apple Reminders, the app sends a MOVE request. The bridge rejects this with 403 because the Donetick eAPI does not support label management. Apple will show an error and leave the task in its original list. **Manage labels in Donetick instead.**
 - **Single-user** — designed for a single Donetick account; all CalDAV clients share the same task list

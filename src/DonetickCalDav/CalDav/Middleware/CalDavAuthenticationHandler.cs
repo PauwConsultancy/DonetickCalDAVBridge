@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using DonetickCalDav.Configuration;
@@ -52,7 +53,11 @@ public sealed class CalDavAuthenticationHandler : AuthenticationHandler<Authenti
         var username = decoded[..separatorIndex];
         var password = decoded[(separatorIndex + 1)..];
 
-        if (username != _calDavSettings.Username || password != _calDavSettings.Password)
+        // Constant-time comparison. A naive != short-circuits on the first mismatching
+        // character, leaking the prefix length through timing. FixedTimeEquals processes
+        // every byte regardless, so attackers cannot probe the password one byte at a time.
+        if (!FixedTimeStringEquals(username, _calDavSettings.Username) ||
+            !FixedTimeStringEquals(password, _calDavSettings.Password))
             return Task.FromResult(AuthenticateResult.Fail("Invalid credentials"));
 
         var claims = new[] { new Claim(ClaimTypes.Name, username) };
@@ -68,5 +73,18 @@ public sealed class CalDavAuthenticationHandler : AuthenticationHandler<Authenti
         Response.StatusCode = 401;
         Response.Headers["WWW-Authenticate"] = "Basic realm=\"DonetickCalDAV\"";
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Timing-safe comparison of two strings as UTF-8 byte sequences.
+    /// Note: FixedTimeEquals still returns early when lengths differ, so the length of
+    /// the configured credentials is not fully hidden. The guarantee is content-timing,
+    /// which is what matters for byte-at-a-time probing attacks.
+    /// </summary>
+    private static bool FixedTimeStringEquals(string a, string b)
+    {
+        var aBytes = Encoding.UTF8.GetBytes(a);
+        var bBytes = Encoding.UTF8.GetBytes(b);
+        return CryptographicOperations.FixedTimeEquals(aBytes, bBytes);
     }
 }

@@ -1,0 +1,67 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.7.1] — 2026-04-20
+
+### Added
+- HTTP resilience via `Microsoft.Extensions.Http.Resilience` (Polly) — retries on transient Donetick API failures with delays of 5s, 15s, 40s, fitting within Apple Reminders' ~60s timeout
+- `Allow` header on 403 responses for MOVE, MKCALENDAR, and MKCOL — more RFC-compliant
+
+### Fixed
+- `CalendarName`, `BaseUrl`, and `Username` now HTML-encoded on the status page — prevents XSS from config values containing special characters
+- `CalendarName` default corrected to `DonetickTasks` (no space) — consistent across code, config, Dockerfile, Unraid template, and docker-compose example
+
+### Documentation
+- README: corrected Apple Calendar claim — tasks with a due date also appear in Calendar.app
+- README: corrected MOVE description — bridge rejects with 403, task stays in place
+- README: removed stale backlog section, added tested-with-Apple disclaimer
+- README: replaced ambiguous "server URL" with "Donetick CalDAV Bridge URL"
+- Added comments for `CachedChore` immutability requirement, concurrent completion behaviour, slug collision edge case
+- Added known-flaky test annotation on `GetHandlerTests`
+
+## [0.7.0] — 2026-04-19
+
+### Changed
+- **Credentials are now compared in constant time.** `CalDavAuthenticationHandler` uses
+  `CryptographicOperations.FixedTimeEquals` on UTF-8 bytes instead of `string.Equals`, closing
+  a prefix-length timing side channel. Length is still observable (documented trade-off).
+- **Donetick deserialization fails loudly.** `DonetickApiClient.DeserializeChoreResponse` now
+  throws `JsonException` when the upstream response matches neither the direct-array nor the
+  wrapper-object shape, instead of silently returning an empty list. A silent empty list made
+  clients believe the user had no tasks; the throw surfaces API contract changes immediately.
+- **Options validation is strict and runs at startup.** `AppSettings` uses a source-generated
+  `[OptionsValidator]` with recursive `[ValidateObjectMembers]` and `ValidateOnStart()`.
+  Misconfiguration now fails the host at boot instead of producing silent runtime errors.
+  Removed misleading defaults (empty `Username` / `Password` / `BaseUrl`) from the model.
+- **VTODO mapping is unified.** `ToCreateRequest` and `ToUpdateRequest` merged into a single
+  `VTodoMapper.ToChoreLiteRequest` — both produced identical output.
+- **Version is single-sourced.** `Program.cs` reads `AssemblyInformationalVersion` via
+  reflection; `<Version>` in the csproj is the only place to edit at release time.
+- **VTODO parser exception handling tightened.** `PutHandler.ParseVTodo` catches broadly
+  (Ical.Net's exception surface is undocumented) but deliberately re-raises
+  `OperationCanceledException` so host shutdown stays responsive.
+- **Upgraded to .NET 10 LTS** (from .NET 8). Supported until November 2028.
+
+### Added
+- **Request-body size limit on PUT.** `PutHandler` rejects bodies above 1 MB with 413, both via
+  `Content-Length` pre-check and a post-read guard for missing/incorrect headers.
+- **Bounded `ClientTracker` growth.** Caps at 100 entries and prunes least-recently-seen when
+  exceeded, preventing unbounded memory growth from rotating or hostile User-Agent headers.
+- **`instructions.md`** — internal project-memory document capturing the *why* behind the
+  architectural decisions (in-memory cache, no RRULE, GroupByLabel, MOVE-403, etc.) so future
+  changes do not inadvertently undo deliberate choices.
+- **This changelog.**
+
+### Documentation
+- Added rationale comments on non-obvious code paths: constant-time comparison tradeoff,
+  bounded-cache pruning semantics, unknown-response-shape failure mode, ephemeral UID mapping.
+
+## [0.6.0] and earlier
+
+No changelog was maintained before 0.7.0. See `git log` for history.

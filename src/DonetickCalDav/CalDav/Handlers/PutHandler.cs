@@ -137,7 +137,7 @@ public sealed class PutHandler
         }
         else
         {
-            var request = VTodoMapper.ToUpdateRequest(vtodo);
+            var request = VTodoMapper.ToChoreLiteRequest(vtodo);
             _logger.LogDebug("PUT update: updating chore {Id} — name={Name} due={Due}",
                 choreId, request.Name, request.DueDate);
             var updated = await _client.UpdateChoreAsync(choreId, request, context.RequestAborted);
@@ -168,7 +168,7 @@ public sealed class PutHandler
     /// <summary>Creates a new chore in Donetick and maps the UID for future lookups.</summary>
     private async Task HandleCreate(HttpContext context, Ical.Net.CalendarComponents.Todo vtodo)
     {
-        var request = VTodoMapper.ToCreateRequest(vtodo);
+        var request = VTodoMapper.ToChoreLiteRequest(vtodo);
         _logger.LogDebug("PUT create: creating new chore — name={Name} due={Due}", request.Name, request.DueDate);
 
         var created = await _client.CreateChoreAsync(request, context.RequestAborted);
@@ -241,7 +241,14 @@ public sealed class PutHandler
         return null;
     }
 
-    /// <summary>Parses the first VTODO from an ICS body, or returns null on failure.</summary>
+    /// <summary>
+    /// Parses the first VTODO from an ICS body, or returns null on failure.
+    /// Ical.Net wraps an ANTLR-generated parser and does not document its exception
+    /// surface — it can throw <see cref="ArgumentException"/>, <see cref="FormatException"/>,
+    /// <see cref="InvalidOperationException"/>, or ANTLR recognition exceptions. We catch
+    /// broadly but deliberately let <see cref="OperationCanceledException"/> propagate so
+    /// host shutdown remains responsive.
+    /// </summary>
     private Ical.Net.CalendarComponents.Todo? ParseVTodo(string icsBody)
     {
         try
@@ -249,9 +256,9 @@ public sealed class PutHandler
             var calendar = Calendar.Load(icsBody);
             return calendar.Todos.FirstOrDefault();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogWarning(ex, "PUT: ICS body parse failed");
+            _logger.LogWarning(ex, "PUT: ICS body parse failed ({Type})", ex.GetType().Name);
             return null;
         }
     }

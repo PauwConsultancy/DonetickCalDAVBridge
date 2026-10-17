@@ -449,71 +449,58 @@ public class VTodoMapperTests
         calWith.Todos[0].Due!.Value.Should().Be(calWithout.Todos[0].Due!.Value);
     }
 
-    // ── ToCreateRequest ─────────────────────────────────────────────────────
+    // ── ToChoreLiteRequest ──────────────────────────────────────────────────
 
     [Fact]
-    public void ToCreateRequest_MapsNameAndDescription()
+    public void ToChoreLiteRequest_MapsNameAndDescription()
     {
         var todo = CreateTestTodo("Buy groceries", "Milk and eggs");
 
-        var request = VTodoMapper.ToCreateRequest(todo);
+        var request = VTodoMapper.ToChoreLiteRequest(todo);
 
         request.Name.Should().Be("Buy groceries");
         request.Description.Should().Be("Milk and eggs");
     }
 
     [Fact]
-    public void ToCreateRequest_NullSummary_DefaultsToUntitled()
+    public void ToChoreLiteRequest_NullSummary_DefaultsToUntitled()
     {
         var todo = CreateTestTodo(null, null);
 
-        var request = VTodoMapper.ToCreateRequest(todo);
+        var request = VTodoMapper.ToChoreLiteRequest(todo);
 
         request.Name.Should().Be("Untitled Task");
     }
 
     [Fact]
-    public void ToCreateRequest_EmptyDescription_SetsNull()
+    public void ToChoreLiteRequest_EmptyDescription_SetsNull()
     {
         var todo = CreateTestTodo("Task", "");
 
-        var request = VTodoMapper.ToCreateRequest(todo);
+        var request = VTodoMapper.ToChoreLiteRequest(todo);
 
         request.Description.Should().BeNull();
     }
 
     [Fact]
-    public void ToCreateRequest_WithDueDate_FormatsAsYyyyMmDd()
+    public void ToChoreLiteRequest_WithDueDate_FormatsAsYyyyMmDd()
     {
         var todo = CreateTestTodo("Task", null);
         todo.Due = new Ical.Net.DataTypes.CalDateTime(new DateTime(2025, 12, 25, 0, 0, 0, DateTimeKind.Utc));
 
-        var request = VTodoMapper.ToCreateRequest(todo);
+        var request = VTodoMapper.ToChoreLiteRequest(todo);
 
         request.DueDate.Should().Be("2025-12-25");
     }
 
     [Fact]
-    public void ToCreateRequest_NoDueDate_DueDateIsNull()
+    public void ToChoreLiteRequest_NoDueDate_DueDateIsNull()
     {
         var todo = CreateTestTodo("Task", null);
 
-        var request = VTodoMapper.ToCreateRequest(todo);
+        var request = VTodoMapper.ToChoreLiteRequest(todo);
 
         request.DueDate.Should().BeNull();
-    }
-
-    // ── ToUpdateRequest ─────────────────────────────────────────────────────
-
-    [Fact]
-    public void ToUpdateRequest_MapsNameAndDescription()
-    {
-        var todo = CreateTestTodo("Updated task", "New description");
-
-        var request = VTodoMapper.ToUpdateRequest(todo);
-
-        request.Name.Should().Be("Updated task");
-        request.Description.Should().Be("New description");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

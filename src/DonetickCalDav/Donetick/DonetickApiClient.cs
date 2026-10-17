@@ -95,8 +95,14 @@ public sealed class DonetickApiClient : IDonetickApiClient
     }
 
     /// <summary>
-    /// Resilient deserialization: tries direct array first, then falls back to wrapper object.
-    /// The Donetick API may return either format depending on version.
+    /// Deserializes the Donetick chore list. Tries the direct array format first, then
+    /// the wrapper object format — the API returns one or the other depending on version.
+    /// <para>
+    /// Throws <see cref="JsonException"/> when neither format matches. Callers (sync service,
+    /// PUT handler) treat this as a hard failure: it is truthful about an unknown upstream
+    /// shape rather than silently returning an empty list and making clients think the user
+    /// has no tasks.
+    /// </para>
     /// </summary>
     private List<DonetickChore> DeserializeChoreResponse(string json)
     {
@@ -104,20 +110,22 @@ public sealed class DonetickApiClient : IDonetickApiClient
         {
             return JsonSerializer.Deserialize<List<DonetickChore>>(json) ?? [];
         }
-        catch (JsonException)
+        catch (JsonException arrayEx)
         {
             _logger.LogDebug("Direct array deserialization failed, attempting wrapper object format");
-        }
 
-        try
-        {
-            var wrapper = JsonSerializer.Deserialize<ChoreResponseWrapper>(json);
-            return wrapper?.Res ?? [];
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "Failed to deserialize chore response in any known format");
-            return [];
+            try
+            {
+                var wrapper = JsonSerializer.Deserialize<ChoreResponseWrapper>(json);
+                return wrapper?.Res ?? [];
+            }
+            catch (JsonException wrapperEx)
+            {
+                throw new JsonException(
+                    "Donetick chore response matched neither the direct array format nor the wrapper object format. " +
+                    "The upstream API may have changed its response shape.",
+                    new AggregateException(arrayEx, wrapperEx));
+            }
         }
     }
 

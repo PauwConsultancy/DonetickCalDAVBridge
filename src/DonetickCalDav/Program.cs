@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
@@ -8,15 +9,27 @@ using DonetickCalDav.Configuration;
 using DonetickCalDav.Donetick;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 
-const string Version = "0.6.0";
+// Single source of truth for the version is <Version> in DonetickCalDav.csproj.
+// AssemblyInformationalVersionAttribute is emitted from that value at build time.
+var version = Assembly.GetExecutingAssembly()
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+    ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
+    ?? "0.0.0";
 
 var builder = WebApplication.CreateBuilder(args);
 
 // -- Configuration --
+// Bind + validate at startup. Missing or invalid credentials/URLs abort the host;
+// the bridge refuses to run half-configured.
+builder.Services.AddOptions<AppSettings>()
+    .Bind(builder.Configuration)
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<AppSettings>, AppSettingsValidator>();
+
+// Setup-time snapshot — used below to configure Kestrel and HttpClient at registration time.
+// Runtime consumers use IOptions<AppSettings> instead.
 var configSection = builder.Configuration.Get<AppSettings>() ?? new AppSettings();
-builder.Services.Configure<AppSettings>(builder.Configuration);
 
 // -- HTTP client for the Donetick External API --
 // Retry strategy: designed for homelab scenarios where downtime = container restart or reboot.
@@ -58,7 +71,7 @@ builder.Services.AddSingleton<StatusPageHandler>(sp =>
         sp.GetRequiredService<ChoreCache>(),
         sp.GetRequiredService<ClientTracker>(),
         sp.GetRequiredService<IOptions<AppSettings>>(),
-        Version));
+        version));
 
 // -- CalDAV handlers (scoped so they are resolved per-request via middleware injection) --
 builder.Services.AddScoped<PropFindHandler>();
@@ -107,7 +120,7 @@ app.UseMiddleware<CalDavMiddleware>();
 
 var scheme = tls != null ? "https" : "http";
 app.Logger.LogInformation("Donetick CalDAV Bridge v{Version} starting on {Scheme}://0.0.0.0:{Port}",
-    Version, scheme, port);
+    version, scheme, port);
 app.Logger.LogInformation("Donetick API: {BaseUrl}", configSection.Donetick.BaseUrl);
 app.Logger.LogInformation("CalDAV user: {User}", configSection.CalDav.Username);
 if (tls != null)
@@ -124,9 +137,10 @@ static X509Certificate2? LoadCertificate(TlsSettings? tls)
     if (tls == null)
         return null;
 
-    // Option 1: PFX file
+    // Option 1: PFX file. X509CertificateLoader is the .NET 9+ replacement for the obsolete
+    // X509Certificate2(string, string?) constructor (SYSLIB0057).
     if (!string.IsNullOrEmpty(tls.PfxPath))
-        return new X509Certificate2(tls.PfxPath, tls.PfxPassword);
+        return X509CertificateLoader.LoadPkcs12FromFile(tls.PfxPath, tls.PfxPassword);
 
     // Option 2: PEM cert + key pair (e.g. from Tailscale or Let's Encrypt)
     if (!string.IsNullOrEmpty(tls.CertPath) && !string.IsNullOrEmpty(tls.KeyPath))

@@ -40,21 +40,11 @@ public static class VTodoMapper
     }
 
     /// <summary>
-    /// Converts an incoming VTODO (from Apple Reminders PUT) to a Donetick create request.
-    /// Only name, description, and dueDate are supported by the eAPI.
+    /// Converts an incoming VTODO (from Apple Reminders PUT) to a Donetick chore request.
+    /// Used for both create and update flows — the Donetick eAPI accepts the same payload
+    /// shape for POST and PUT, and only name, description, and dueDate round-trip.
     /// </summary>
-    public static ChoreLiteRequest ToCreateRequest(Todo vtodo) => new()
-    {
-        Name = vtodo.Summary ?? "Untitled Task",
-        Description = NullIfEmpty(vtodo.Description),
-        DueDate = vtodo.Due?.AsDateTimeOffset.ToString("yyyy-MM-dd"),
-    };
-
-    /// <summary>
-    /// Converts an incoming VTODO (from Apple Reminders PUT) to a Donetick update request.
-    /// Only name, description, and dueDate are supported by the eAPI.
-    /// </summary>
-    public static ChoreLiteRequest ToUpdateRequest(Todo vtodo) => new()
+    public static ChoreLiteRequest ToChoreLiteRequest(Todo vtodo) => new()
     {
         Name = vtodo.Summary ?? "Untitled Task",
         Description = NullIfEmpty(vtodo.Description),

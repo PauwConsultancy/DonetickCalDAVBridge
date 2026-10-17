@@ -1,20 +1,36 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Options;
 
 namespace DonetickCalDav.Configuration;
 
 /// <summary>
 /// Root configuration binding for all application settings.
 /// Populated from appsettings.json and/or environment variables.
+/// <para>
+/// Validation is enforced at startup by <see cref="AppSettingsValidator"/> via
+/// <c>AddOptions&lt;AppSettings&gt;().ValidateOnStart()</c>. Missing or invalid
+/// settings abort the host bootstrap — the bridge refuses to run with
+/// half-configured credentials.
+/// </para>
 /// </summary>
 public sealed class AppSettings
 {
     public const string SectionName = "AppSettings";
 
-    [Required]
+    [ValidateObjectMembers]
     public DonetickSettings Donetick { get; set; } = new();
 
-    [Required]
+    [ValidateObjectMembers]
     public CalDavSettings CalDav { get; set; } = new();
+}
+
+/// <summary>
+/// Source-generated recursive validator for <see cref="AppSettings"/>.
+/// Applies all <c>DataAnnotations</c> attributes on the root and nested options types.
+/// </summary>
+[OptionsValidator]
+public sealed partial class AppSettingsValidator : IValidateOptions<AppSettings>
+{
 }
 
 /// <summary>
@@ -23,11 +39,11 @@ public sealed class AppSettings
 public sealed class DonetickSettings
 {
     /// <summary>Base URL of the Donetick instance (e.g. "http://donetick:8080").</summary>
-    [Required, Url]
-    public string BaseUrl { get; set; } = "http://localhost:8080";
+    [Required(AllowEmptyStrings = false), Url]
+    public string BaseUrl { get; set; } = "";
 
     /// <summary>External API secret key (sent as "secretkey" header).</summary>
-    [Required, MinLength(1)]
+    [Required(AllowEmptyStrings = false)]
     public string ApiKey { get; set; } = "";
 
     /// <summary>Interval in seconds between chore sync polls. Minimum: 5.</summary>
@@ -41,12 +57,12 @@ public sealed class DonetickSettings
 public sealed class CalDavSettings
 {
     /// <summary>Username for CalDAV Basic Auth. Also used in URL paths.</summary>
-    [Required, MinLength(1)]
-    public string Username { get; set; } = "user";
+    [Required(AllowEmptyStrings = false)]
+    public string Username { get; set; } = "";
 
     /// <summary>Password for CalDAV Basic Auth.</summary>
-    [Required, MinLength(1)]
-    public string Password { get; set; } = "pass";
+    [Required(AllowEmptyStrings = false)]
+    public string Password { get; set; } = "";
 
     /// <summary>Display name shown in Apple Reminders for this calendar.</summary>
     public string CalendarName { get; set; } = "DonetickTasks";

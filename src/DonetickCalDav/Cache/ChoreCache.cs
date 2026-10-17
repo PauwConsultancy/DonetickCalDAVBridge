@@ -109,7 +109,16 @@ public sealed class ChoreCache
 
     /// <summary>
     /// Maps an external UID (from Apple Calendar PUT) to a Donetick chore ID.
-    /// Needed because Calendar.app generates its own UUID-based filenames for new tasks.
+    /// Needed because Calendar.app generates its own UUID-based filenames for new tasks —
+    /// after a create, the first follow-up PUT/DELETE still uses that client-generated UUID
+    /// before Apple has seen our 201-Location response with the canonical donetick-{id}.ics URL.
+    /// <para>
+    /// <b>Intentionally ephemeral.</b> The map lives only in memory and is discarded on restart.
+    /// Donetick is the source of truth; persisting this map would create a second authority that
+    /// can drift. In practice the window where the UUID path matters is short: once the client
+    /// has the canonical URL, subsequent requests bypass the map entirely. See
+    /// <c>instructions.md</c> ("UID mapping is ephemeral") before adding persistence here.
+    /// </para>
     /// </summary>
     public void MapUid(string uid, int choreId)
     {

@@ -8,6 +8,13 @@ namespace DonetickCalDav.Cache;
 /// </summary>
 public sealed class ClientTracker
 {
+    /// <summary>
+    /// Upper bound on distinct tracked clients. Prevents unbounded growth from rotating
+    /// "other-{hash}" buckets when unusual User-Agents hit the endpoint. Well above any
+    /// realistic homelab client count (typically 1–5 devices).
+    /// </summary>
+    private const int MaxTrackedClients = 100;
+
     private readonly ConcurrentDictionary<string, ClientInfo> _clients = new();
 
     /// <summary>
@@ -26,6 +33,28 @@ public sealed class ClientTracker
                 LastSeen = DateTime.UtcNow,
                 RequestCount = existing.RequestCount + 1,
             });
+
+        if (_clients.Count > MaxTrackedClients)
+            PruneOldest();
+    }
+
+    /// <summary>
+    /// Removes the least-recently-seen entries so total count returns below the cap.
+    /// Concurrent callers may each run this; that is harmless — TryRemove is idempotent.
+    /// </summary>
+    private void PruneOldest()
+    {
+        var excess = _clients.Count - MaxTrackedClients;
+        if (excess <= 0) return;
+
+        var victims = _clients
+            .OrderBy(kv => kv.Value.LastSeen)
+            .Take(excess)
+            .Select(kv => kv.Key)
+            .ToList();
+
+        foreach (var key in victims)
+            _clients.TryRemove(key, out _);
     }
 
     /// <summary>
