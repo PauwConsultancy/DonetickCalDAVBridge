@@ -26,8 +26,8 @@ public class StartupTests(DonetickStub donetick) : IntegrationTest(donetick)
 
         var start = () => StartBridgeAsync(o => o.Settings[key] = value);
 
-        var failure = await start.Should().ThrowAsync<Exception>();
-        AllMessages(failure.Which).Should().Contain(expectedInMessage);
+        var failure = await start.Should().ThrowAsync<BridgeStartException>();
+        failure.Which.AllMessages.Should().Contain(expectedInMessage);
     }
 
     [Theory(Timeout = DefaultTimeout)]
@@ -42,8 +42,10 @@ public class StartupTests(DonetickStub donetick) : IntegrationTest(donetick)
 
         // The HttpClient set-up parses the URL before options validation runs, so the user sees
         // "Invalid URI" instead of the validation message for Donetick__BaseUrl.
-        var failure = await start.Should().ThrowAsync<UriFormatException>();
-        failure.Which.Message.Should().NotContain("BaseUrl");
+        var failure = await start.Should().ThrowAsync<BridgeStartException>();
+        var cause = failure.Which.Causes.OfType<UriFormatException>().Should().NotBeEmpty().And.Subject.First();
+        cause.Message.Should().NotContain("BaseUrl");
+        failure.Which.AllMessages.Should().NotContain("BaseUrl");
     }
 
     [Fact(Timeout = DefaultTimeout)]
@@ -75,18 +77,5 @@ public class StartupTests(DonetickStub donetick) : IntegrationTest(donetick)
 
         members.Hrefs.Should().Equal(bridge.CalendarPath());
         Donetick.Count("GET", DonetickStub.ChoresPath).Should().Be(0, "the first load waits for the startup delay");
-    }
-
-    private static string AllMessages(Exception exception)
-    {
-        var messages = new List<string>();
-        for (Exception? e = exception; e != null; e = e.InnerException)
-        {
-            messages.Add(e.Message);
-            if (e is AggregateException aggregate)
-                messages.AddRange(aggregate.InnerExceptions.Select(AllMessages));
-        }
-
-        return string.Join(Environment.NewLine, messages);
     }
 }

@@ -105,6 +105,18 @@ public sealed class BridgeHost : IAsyncDisposable
         try
         {
             host.Start();
+        }
+        catch (Exception ex)
+        {
+            // When the application fails during startup, WebApplicationFactory sometimes surfaces an
+            // ObjectDisposedException from its own host wrapper instead of the original error. The
+            // original error is always logged, so the exception carries the log for assertions.
+            await host.DisposeAsync();
+            throw new BridgeStartException(ex, host.Logs);
+        }
+
+        try
+        {
             if (options.WaitForInitialSync)
                 await host.CompleteStartupAsync();
             return host;
@@ -183,5 +195,32 @@ public sealed class BridgeHost : IAsyncDisposable
             settings[key] = value;
 
         return settings;
+    }
+}
+
+/// <summary>The bridge did not start; carries the thrown exception and everything the host logged.</summary>
+public sealed class BridgeStartException(Exception inner, LogCollector logs)
+    : Exception($"The bridge failed to start: {inner.Message}", inner)
+{
+    public LogCollector Logs { get; } = logs;
+
+    /// <summary>The exceptions that caused the failure: the thrown one and those the host logged.</summary>
+    public IReadOnlyList<Exception> Causes =>
+        Flatten(InnerException!).Concat(Logs.Entries.Where(e => e.Exception != null).SelectMany(e => Flatten(e.Exception!))).ToList();
+
+    /// <summary>All messages of <see cref="Causes"/>, one per line.</summary>
+    public string AllMessages => string.Join(Environment.NewLine, Causes.Select(c => c.Message));
+
+    private static IEnumerable<Exception> Flatten(Exception exception)
+    {
+        for (Exception? e = exception; e != null; e = e.InnerException)
+        {
+            yield return e;
+            if (e is AggregateException aggregate)
+            {
+                foreach (var inner in aggregate.InnerExceptions.SelectMany(Flatten))
+                    yield return inner;
+            }
+        }
     }
 }

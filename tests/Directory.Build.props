@@ -6,5 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
+    <!-- The snapshot helper finds approved files through [CallerFilePath]. Deterministic source paths
+         (switched on by ContinuousIntegrationBuild) would rewrite those paths to /_/..., so keep them off. -->
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
   </PropertyGroup>
 </Project>

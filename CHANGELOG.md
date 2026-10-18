@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coverage report and gate (`tests/coverage`): merged Cobertura from all test projects, 80 % floor plus a ratchet
 - Snapshot tests with an in-house helper: the ICS matrix (48 approved files) and full HTTP responses for PROPFIND, REPORT, errors and health
 - Replay tests (L3): client sessions under `tests/fixtures/sessions` replayed through the integration harness; synthetic Apple Reminders sessions RP-01 to RP-07, a recorded session of the Python `caldav` client, a capture converter and a recording guide (`docs/testing/apple-recording.md`)
+- GitHub Actions CI (`.github/workflows/ci.yml`): Release build with warnings as errors, all tests with coverage gate and JUnit summary, vulnerable-package check, and on `main` and tags an image build with a Trivy scan
 
 ### Changed
 - Ical.Net 4.3.1 to 5.2.3 (v4 is out of support); code migrated to the v5 API

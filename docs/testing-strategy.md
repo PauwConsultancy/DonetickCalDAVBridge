@@ -16,7 +16,7 @@ The project is deliberately used as a reference case for practices that are mean
 
 The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use a small in-house helper of about 75 lines (prototype in appendix C) instead of a library: Verify now carries a maintenance fee for revenue-generating use, and the free alternatives are less complete (chapter 13).
 
-Next step: phase 3 (the CI pipeline); phases 0 to 2 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
+Next step: phase 4 (container end-to-end and contract tests); phases 0 to 3 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
 
 ## 1 Purpose and scope
 This document defines how the bridge is tested: which risks matter, which test levels address them, the tools, test data, conventions, the CI pipeline with its quality gates, and a phased roadmap.
@@ -41,7 +41,7 @@ It complements the [functional design](functional-design.md) (what to verify), t
 
 Totals for hand-written code: 946 of 2,132 lines (44.4 %) and 308 of 779 branches (39.5 %), measured with coverlet on 2026-10-17. There is no CI; tests run when someone remembers.
 
-After phase 1 (2026-10-18), measured with Microsoft.Testing.Extensions.CodeCoverage, which counts lines differently: the unit tests alone cover 46.7 % of 1,658 lines, the integration tests alone 86.2 %, together 91.5 % of lines and 78.1 % of branches. `tests/coverage/coverage_report.py` produces the per-file table.
+After phase 1 (2026-10-18), measured with Microsoft.Testing.Extensions.CodeCoverage on a Debug build, which counts lines differently: the unit tests alone cover 46.7 % of 1,658 lines, the integration tests alone 86.2 %, together 91.5 % of lines and 78.1 % of branches. The CI gate measures the Release build: 93.0 % of 1,392 lines and 82.8 % of branches after phase 2. `tests/coverage/coverage_report.py` produces the per-file table.
 
 Lessons from the Ical.Net 5 upgrade, each mapped to the layer that would have caught it:
 
@@ -330,6 +330,19 @@ Source: [diagrams/test-pipeline.puml](diagrams/test-pipeline.puml)
 
 Test results are published as JUnit XML (`--report-xunit-junit`) so the GitHub Actions summary shows them. Coverlet's `coverlet.collector` is a VSTest data collector and does not apply once the projects run on Microsoft.Testing.Platform.
 
+Implementation (phase 3), `.github/workflows/ci.yml`:
+
+| Job | Runs on | Steps |
+|-----|---------|-------|
+| Build and test | Every push, pull requests from forks, manual | Release build with warnings as errors; all .NET tests with coverage and JUnit output; test summary (`tests/ci/junit_summary.py`) and coverage table in the job summary; coverage gate (`tests/coverage/coverage_report.py`); test results, coverage and any `.received` snapshot files as an artifact |
+| Vulnerable packages | Same | `dotnet list package --vulnerable --include-transitive`; fails on any finding |
+| Container image and scan | Push to `main` and `v*` tags, after both jobs above | Image built from the `Dockerfile` (not pushed) and scanned with Trivy; fails on critical vulnerabilities with a fix available |
+
+- Actions are pinned to commit SHAs with the version in a comment, and only versions at least two weeks old were chosen. The workflow was checked with actionlint 1.7.12 (with shellcheck).
+- Coverage is gated on the Release build, which CI uses: 93.0 % of hand-written lines (the Debug build counts more sequence points and reports 91.5 %). The figure is deterministic across runs, so the ratchet tolerance is 0.2 points.
+- Making the pipeline required for merges to `main` is a repository setting (branch protection with the "Build and test" and "Vulnerable packages" checks); it cannot be set from the repository files.
+- The L4 and L5 jobs follow in phase 4, mutation testing in phase 5.
+
 Coverage targets by area, as a check that every part of the code is exercised at the right level:
 
 | Area | Target |
@@ -368,7 +381,7 @@ With the `Covers` trait in place, this table can be generated from the test asse
 | 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test | Done 2026-10-18 |
 | 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % | Done 2026-10-18; 91.5 % |
 | 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green | Done 2026-10-18, with synthetic RP sessions until recordings exist |
-| 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` | Open |
+| 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` | Done 2026-10-18; making it required is a GitHub setting |
 | 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented | Open |
 | 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded | Open |
 

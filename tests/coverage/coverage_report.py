@@ -9,7 +9,8 @@ so the figures are for hand-written code. Branch coverage per line takes the bes
 approximation: Cobertura does not say which outcomes were taken.
 
 Gate: line coverage of hand-written code must reach the floor and may not drop more than the
-tolerance below the baseline stored in baseline.json (a ratchet). The report is printed as Markdown
+tolerance below the baseline stored in baseline.json (a ratchet). Measure Release builds, as CI does:
+a Debug build counts more sequence points and reports about 1.5 points less. The report is printed as Markdown
 and appended to $GITHUB_STEP_SUMMARY when that variable is set.
 """
 

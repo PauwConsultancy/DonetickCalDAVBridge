@@ -1,0 +1,127 @@
+# Every push and pull request: build, unit, snapshot, integration and replay tests, coverage gate and
+# dependency check. On main and tags also the container image with a vulnerability scan.
+# Quality gates: docs/testing-strategy.md, chapter 10. Actions are pinned to commit SHAs.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  test:
+    name: Build and test
+    # Pull requests from branches in this repository are already covered by the push run.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore donetick_caldav.sln
+
+      - name: Build (warnings are errors)
+        run: dotnet build donetick_caldav.sln --no-restore --configuration Release -p:TreatWarningsAsErrors=true
+
+      - name: Test (unit, snapshot, integration, replay) with coverage
+        run: >-
+          dotnet test --solution donetick_caldav.sln --no-build --configuration Release
+          --coverage --coverage-output-format cobertura
+          --coverage-settings "$GITHUB_WORKSPACE/tests/coverage/coverage.settings.xml"
+          --report-xunit-junit
+          --results-directory "$GITHUB_WORKSPACE/artifacts/test-results"
+          --timeout 15m
+
+      - name: Test summary
+        if: ${{ !cancelled() }}
+        run: python3 tests/ci/junit_summary.py artifacts/test-results
+
+      - name: Coverage gate (floor and ratchet)
+        run: python3 tests/coverage/coverage_report.py artifacts/test-results/*.cobertura.xml
+
+      - name: Upload test results, coverage and unapproved snapshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results
+          path: |
+            artifacts/test-results
+            tests/**/*.received.*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  dependencies:
+    name: Vulnerable packages
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore donetick_caldav.sln
+
+      - name: List vulnerable packages, including transitive ones
+        run: |
+          dotnet list donetick_caldav.sln package --vulnerable --include-transitive | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then
+            echo "::error::Vulnerable packages found, see the list above."
+            exit 1
+          fi
+
+  image:
+    name: Container image and scan
+    needs: [test, dependencies]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: donetick-caldav:ci
+
+      - name: Scan image (fail on critical vulnerabilities)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: donetick-caldav:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table

@@ -13,7 +13,7 @@ Categorieën: `Bug` | `Feature` | `Tech Debt` | `Idea`
 
 ## Ideeën / Laag geprioriteerd
 
-- `Idea` — CI/CD pipeline — GitHub Actions workflow voor automatisch builden, testen en publiceren van Docker images naar GHCR of Docker Hub
+- `Idea` — Docker images publiceren — vanuit GitHub Actions naar GHCR of Docker Hub. Builden, testen en de image-scan draaien al in `.github/workflows/ci.yml`; alleen het publiceren ontbreekt nog
 
 ---
 
