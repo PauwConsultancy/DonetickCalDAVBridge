@@ -178,10 +178,10 @@ or making the project accessible from the public internet by default.
 - Integration tests are no longer "intentionally minimal": the Ical.Net 5 upgrade showed that
   wiring, wire-format and concurrency defects slip past unit tests and manual checks
 - Approved test dependencies (no need to ask again): xunit.v3, Microsoft.AspNetCore.Mvc.Testing,
-  WireMock.Net, Microsoft.Extensions.TimeProvider.Testing, Verify.XunitV3
-- Verify is used under its open source exemption, declared in `tests/Directory.Build.props` and valid
-  until 2027-10 (renew before then; the build fails with SC021 once it lapses). Keep this project
-  free of revenue-generating use, or replace the exemption with a sponsorship
+  WireMock.Net, Microsoft.Extensions.TimeProvider.Testing
+- Snapshot tests use a small in-house helper (`tests/DonetickCalDav.Testing`), not a library. Verify
+  was rejected because of its maintenance fee for revenue-generating use (strategy chapter 13); do not
+  add a snapshot library without revisiting that decision
 - Every defect gets a test before the fix; open findings get characterization tests tagged `KnownIssue`
 
 ## MCP servers

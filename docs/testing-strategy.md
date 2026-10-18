@@ -14,7 +14,7 @@ This strategy adds five layers on top of the unit tests, chosen from a risk anal
 
 The project is deliberately used as a reference case for practices that are meant to carry over to other work, so the strategy goes further than an application of this size strictly needs. Each layer states what it protects against, so layers can be dropped where a future project does not have that risk.
 
-The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use Verify under its open source exemption; the free alternatives were evaluated and found less complete (chapter 13).
+The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use a small in-house helper of about 75 lines (prototype in appendix C) instead of a library: Verify now carries a maintenance fee for revenue-generating use, and the free alternatives are less complete (chapter 13).
 
 Next step: phase 0 as specified in appendix A.
 
@@ -83,7 +83,7 @@ Source: [diagrams/test-levels.puml](diagrams/test-levels.puml)
 | Level | System under test | Replaced | Tooling | Runs | Duration |
 |-------|-------------------|----------|---------|------|----------|
 | L1 Unit | One class or function | Donetick client (NSubstitute), clock | xUnit v3, FluentAssertions, NSubstitute | Every push | Seconds |
-| L1b Snapshot | Output of mappers and handlers | As L1 or L2 | Verify | Every push | Seconds |
+| L1b Snapshot | Output of mappers and handlers | As L1 or L2 | In-house snapshot helper | Every push | Seconds |
 | L2 Integration | Whole application in one process | Donetick (HTTP stub), clock | `WebApplicationFactory`, WireMock.Net, `FakeTimeProvider` | Every push | Seconds |
 | L3 Replay | Whole application, driven by recorded Apple sessions | Donetick (HTTP stub) | L2 harness, recorded fixtures, snapshots | Every push | Seconds |
 | L4 End-to-end | Built container image | Donetick (stub container) | Docker Compose, pytest, `caldav` library | Nightly, tags | Minutes |
@@ -113,7 +113,7 @@ Snapshot tests store the output once as an approved file and fail on any differe
 | SN-04 | Error responses: 401 headers, 403 and 405 with `Allow`, PROPPATCH 207 | |
 | SN-05 | `/health/json` body | Uptime and version scrubbed |
 
-Volatile values are scrubbed before comparison: the random global CTag, uptime and version. `DTSTAMP` needs no scrubbing because it derives from fixed test data. Snapshots are stored with their real extension (`.verified.ics`, `.verified.xml`), so they are readable in reviews; a mismatch fails with a line diff in the test output.
+Volatile values are scrubbed before comparison: the random global CTag, uptime and version. `DTSTAMP` needs no scrubbing because it derives from fixed test data. Snapshots are stored with their real extension (`.verified.ics`, `.verified.xml`), so they are readable in reviews; a mismatch writes a `.received` file and fails with a line diff in the test output. New or changed snapshots are approved locally with `SNAPSHOT_ACCEPT=1`, which is ignored on CI.
 
 ### 5.3 L2 Integration tests
 The integration harness hosts the real application in the test process and replaces only Donetick and the clock.
@@ -258,6 +258,7 @@ tests/
   DonetickCalDav.Tests/               L1 unit and L1b snapshot tests (existing project)
     Snapshots/                        approved snapshot files
   DonetickCalDav.IntegrationTests/    L2 and L3: WebApplicationFactory, WireMock.Net
+  DonetickCalDav.Testing/             shared test helpers: snapshot helper, chore matrix
     Harness/                          host factory, CalDAV test client, assertions
   fixtures/
     donetick/                         recorded payloads and WireMock mappings
@@ -271,6 +272,7 @@ docs/testing/
 
 - **Naming:** unit tests keep `MethodName_Scenario_ExpectedOutcome`; integration tests use `Feature_Scenario_ExpectedOutcome`, for example `Complete_RecurringChore_ReloadsCacheAndOmitsETag`.
 - **Traits:** `[Trait("Level", "Integration")]` for filtering, `[Trait("Covers", "UC-05")]` for traceability, `[Trait("KnownIssue", "F-01")]` for characterization tests. Under Microsoft.Testing.Platform the filter is `dotnet test --project <project> --filter-trait "Level=Integration"` (verified).
+- **Snapshots:** approve locally with `SNAPSHOT_ACCEPT=1 dotnet test --project <project>`, then review the changed `.verified` files in the commit like any other code change.
 - **Test IDs:** the IDs in this document (IT-08, SN-01, ...) appear in the test name or a trait, so the catalogue and the code can be cross-checked.
 - **Flaky tests:** a flaky test is quarantined with a trait and a backlog item, and fixed or removed within a week. Automatic retries are not used, because they hide defects such as the serializer race.
 
@@ -339,7 +341,7 @@ With the `Covers` trait in place, this table can be generated from the test asse
 |-------|--------------|-----------|
 | 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test |
 | 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % |
-| 2 Wire format | Verify with the open source exemption (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green |
+| 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green |
 | 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` |
 | 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented |
 | 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded |
@@ -356,7 +358,7 @@ Decided on 2026-10-17; the snapshot library on 2026-10-18.
 | Recording Apple traffic | mitmproxy; no capture middleware in production code |
 | Coverage gate | Ratchet plus an 80 % floor after phase 1 |
 | `instructions.md` | Testing section updated to refer to this strategy |
-| Snapshot library | Verify, under its open source exemption; see below |
+| Snapshot library | No library: an in-house snapshot helper; see below |
 
 Verify was the intended snapshot library. Since version 33 its build fails unless the project declares a sponsorship or an exemption (error SC021), and every Verify version released after 1 September 2026 falls under its maintenance fee. The fee applies to organisations with at least US$10,000 annual revenue that use the packages in revenue-generating work, starting at US$5 per month for fewer than 40 employees; open source projects without revenue are exempt.
 
@@ -370,20 +372,18 @@ Free alternatives were checked on 2026-10-18, each with a spike on xunit.v3 4.0.
 | Shouldly 4.3.0 (`ShouldMatchApproved`) | BSD-3-Clause | Active repository, last release 2025-01-23 | Works on its own. Failed with `MissingMethodException` next to a newer DiffEngine; adds a second assertion library next to FluentAssertions |
 | In-house helper | n/a | Own code | Possible, but scrubbers, diff output and the approval workflow have to be built and maintained |
 
-None of the free options matches Verify on output quality, scrubbing and maintenance at the same time, so the decision is option A: Verify 33 with the open source exemption, which fits this repository (MIT, no revenue). The exemption is declared in a `Directory.Build.props` under `tests/` (task P2-01) and is valid for at most 12 months:
+None of the free libraries matches Verify on output quality, scrubbing and maintenance at the same time. A prototype of an in-house helper (appendix C) delivered the parts this project needs in about 75 lines: approved files with the real extension, a `.received` file and a line diff on mismatch, scrubbers, line-ending normalisation, and bulk approval that is disabled on CI.
 
-```xml
-<Project>
-  <PropertyGroup>
-    <Verify_SponsorshipExemption>OpenSource</Verify_SponsorshipExemption>
-    <Verify_SponsorshipExemptionUntil>2027-10</Verify_SponsorshipExemptionUntil>
-  </PropertyGroup>
-</Project>
-```
+The decision is therefore an in-house helper (option C). It carries no licence obligations, so the pattern transfers to client work unchanged, and it can later move into a small internal package.
 
-The declaration has to be renewed before November 2027; after that month the build fails with SC021 again, which makes a missed renewal visible rather than silent.
+Accepted trade-offs:
 
-For paid client work the same pattern applies, but the client organisation falls under the fee if it has the revenue. Where that is not acceptable, Snapshooter is the most complete licence-free fallback, with strict mode enabled in CI.
+- No automatic diff-tool launch; compare the `.received` and `.verified` files in the IDE.
+- No ready-made converters; an XML normaliser and the scrubbers this project needs are added in phase 2.
+- No detection of orphaned snapshot files.
+- Line endings are normalised, so a CRLF regression in the ICS output needs its own assertion.
+
+Verify remains the reference if these gaps start to hurt; for this repository the open source exemption would cover it.
 
 ## 14 Reusable pattern
 The approach generalises to other services that sit between clients and a third-party API:
@@ -395,7 +395,7 @@ The approach generalises to other services that sit between clients and a third-
 5. Pin known defects with characterization tests, so the findings list and the test suite cannot drift apart.
 6. Make tests traceable to requirements with traits, and generate the traceability matrix.
 7. Tier the pipeline: fast layers on every push, containers nightly, live third parties weekly, humans per release.
-8. Check licences of test tooling before adopting it; the Verify fee change shows that even test-only packages can carry obligations.
+8. Check licences of test tooling before adopting it; the Verify fee change shows that even test-only packages can carry obligations, and that a small in-house helper can be the better trade.
 
 ## Appendix A Phase 0 specification
 Phase 0 prepares the repository so that phase 1 only adds tests. Each task is small enough for one commit.
@@ -414,14 +414,13 @@ Phase 2 starts with one preparatory task:
 
 | ID | Task | Acceptance criteria |
 |----|------|---------------------|
-| P2-01 | Add `Verify.XunitV3` and `tests/Directory.Build.props` with the open source exemption from chapter 13 | A first snapshot test passes; the build shows no SC021 error |
+| P2-01 | Add the snapshot helper from appendix C to `tests/DonetickCalDav.Testing`, extended with a discriminator for theories, an XML normaliser, scrubbers for CTag, uptime and version, and a `.gitattributes` entry `*.verified.* -text`; cover the helper with its own tests | SN-01 passes; helper tests cover new, match, mismatch, accept and CI cases |
 
 Package versions to pin, checked on nuget.org and PyPI on 2026-10-17:
 
 | Package | Version | Used by |
 |---------|---------|---------|
 | xunit.v3 | 4.0.2 | Both test projects |
-| Verify.XunitV3 | 33.3.4 | Snapshot tests (phase 2), with the open source exemption |
 | xunit.runner.visualstudio | 4.0.1 | Both test projects (IDE discovery) |
 | Microsoft.NET.Test.Sdk | 18.11.0 | Both test projects |
 | FluentAssertions | 7.2.2 | Both test projects (last Apache-2.0 version) |
@@ -450,4 +449,127 @@ Spikes run on 2026-10-17 in a scratch copy of the repository, with .NET SDK 10.0
 | Can Verify 33 be used without configuration? | No. Build error SC021 until a sponsorship or exemption is declared | Restore and build of `Verify.XunitV3` 33.3.4 |
 | Does Verify 33 work on xunit.v3 4.x and Microsoft.Testing.Platform with the exemption declared? | Yes. The first run writes `.received.ics`; after approval the test passes; a changed `SUMMARY` fails with a line diff | Spike with `Directory.Build.props`, 2026-10-18 |
 | Do the free alternatives work on the same stack? | Snapshooter, ApprovalTests and Shouldly all work; details and limitations in chapter 13 | Same spike, one test per library |
+| Does an in-house helper cover this project's needs? | Yes, in about 75 lines: a new snapshot fails and writes a `.received` file; `SNAPSHOT_ACCEPT=1` approves it; an unchanged run passes; a changed `SUMMARY` fails with a line diff | Prototype in appendix C, 2026-10-18 |
 | Can a fresh Donetick be provisioned without the web UI? | Yes, by the flow in 5.6 | Reading the Donetick source at commit `9d9921d`; to be confirmed against a container in phase 4 |
+
+## Appendix C Snapshot helper prototype
+The prototype used to decide on the in-house helper (chapter 13). It was tested on xunit.v3 4.0.2 with Microsoft.Testing.Platform and is the starting point for task P2-01; it is not yet in the repository.
+
+Usage:
+
+```csharp
+Snapshot.Match(VTodoMapper.ToIcsString(chore), "ics", scrubbers: [Snapshot.ScrubGuids]);
+```
+
+Output on a mismatch:
+
+```text
+Snapshot mismatch for OwnTests.Ics.verified.ics:
+  STATUS:NEEDS-ACTION
+- SUMMARY:Shave
++ SUMMARY:Shave daily
+  UID:donetick-42@donetick
+```
+
+Source:
+
+```csharp
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace Own;
+
+/// <summary>
+/// Minimal approval-style snapshot assertion: compares text with an approved
+/// "{Class}.{Test}.verified.{ext}" file next to the test source.
+/// </summary>
+public static partial class Snapshot
+{
+    private const string AcceptVariable = "SNAPSHOT_ACCEPT";
+
+    public static void Match(
+        string actual,
+        string extension = "txt",
+        string? discriminator = null,
+        IEnumerable<Func<string, string>>? scrubbers = null,
+        [CallerFilePath] string sourceFile = "",
+        [CallerMemberName] string testName = "")
+    {
+        var directory = Path.Combine(Path.GetDirectoryName(sourceFile)!, "Snapshots");
+        var baseName = $"{Path.GetFileNameWithoutExtension(sourceFile)}.{testName}"
+                       + (discriminator is null ? "" : $".{discriminator}");
+        var verifiedPath = Path.Combine(directory, $"{baseName}.verified.{extension}");
+        var receivedPath = Path.Combine(directory, $"{baseName}.received.{extension}");
+
+        var received = Normalise(Scrub(actual, scrubbers));
+        var verified = File.Exists(verifiedPath) ? Normalise(File.ReadAllText(verifiedPath)) : null;
+
+        if (verified == received)
+        {
+            File.Delete(receivedPath);
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        if (ShouldAccept())
+        {
+            File.WriteAllText(verifiedPath, received);
+            File.Delete(receivedPath);
+            return;
+        }
+
+        File.WriteAllText(receivedPath, received);
+        var message = verified is null
+            ? $"New snapshot, review {receivedPath} and rename it to {Path.GetFileName(verifiedPath)}."
+            : $"Snapshot mismatch for {Path.GetFileName(verifiedPath)}:\n{LineDiff(verified, received)}";
+        throw new Xunit.Sdk.XunitException(message);
+    }
+
+    /// <summary>Replaces GUIDs, which are random per run, with a stable token.</summary>
+    public static string ScrubGuids(string text) => GuidPattern().Replace(text, "{guid}");
+
+    private static string Scrub(string text, IEnumerable<Func<string, string>>? scrubbers) =>
+        (scrubbers ?? []).Aggregate(text, (current, scrub) => scrub(current));
+
+    // Line endings and a trailing newline would otherwise differ between Windows, macOS and git settings.
+    private static string Normalise(string text) => text.Replace("\r\n", "\n").TrimEnd('\n') + "\n";
+
+    // Never accept automatically on a CI server.
+    private static bool ShouldAccept() =>
+        Environment.GetEnvironmentVariable(AcceptVariable) == "1"
+        && Environment.GetEnvironmentVariable("CI") is null;
+
+    /// <summary>Line diff based on the longest common subsequence, with one line of context.</summary>
+    private static string LineDiff(string expected, string actual)
+    {
+        var a = expected.Split('\n');
+        var b = actual.Split('\n');
+        var lcs = new int[a.Length + 1, b.Length + 1];
+        for (var i = a.Length - 1; i >= 0; i--)
+            for (var j = b.Length - 1; j >= 0; j--)
+                lcs[i, j] = a[i] == b[j] ? lcs[i + 1, j + 1] + 1 : Math.Max(lcs[i + 1, j], lcs[i, j + 1]);
+
+        var lines = new List<(char Kind, string Text)>();
+        int x = 0, y = 0;
+        while (x < a.Length || y < b.Length)
+        {
+            if (x < a.Length && y < b.Length && a[x] == b[y]) { lines.Add((' ', a[x])); x++; y++; }
+            else if (x < a.Length && (y == b.Length || lcs[x + 1, y] >= lcs[x, y + 1])) lines.Add(('-', a[x++]));
+            else lines.Add(('+', b[y++]));
+        }
+
+        var output = new StringBuilder();
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var nearChange = Enumerable.Range(Math.Max(0, i - 1), Math.Min(3, lines.Count - Math.Max(0, i - 1)))
+                .Any(k => lines[k].Kind != ' ');
+            if (nearChange) output.AppendLine($"{lines[i].Kind} {lines[i].Text}");
+        }
+        return output.ToString();
+    }
+
+    [GeneratedRegex("[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}")]
+    private static partial Regex GuidPattern();
+}
+```
