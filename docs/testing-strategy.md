@@ -1,5 +1,5 @@
 # Donetick CalDAV Bridge - Testing Strategy
-Status: accepted on 2026-10-17; implementation not started. Applies to the code after the Ical.Net 5 upgrade (commit `0209644`).
+Status: accepted on 2026-10-17, snapshot library decided on 2026-10-18; implementation not started. Applies to the code after the Ical.Net 5 upgrade (commit `0209644`).
 
 ## Summary
 The bridge has a solid unit test suite (210 tests) but nothing that exercises the application as a whole. Measured line coverage of hand-written code is 44 %; the request pipeline, authentication, PROPFIND, REPORT, the sync service and the startup code have no coverage at all. The Ical.Net 5 upgrade showed what that costs: a changed `DTSTART` value type and a concurrency defect only surfaced through ad-hoc output comparison and stress runs.
@@ -14,7 +14,7 @@ This strategy adds five layers on top of the unit tests, chosen from a risk anal
 
 The project is deliberately used as a reference case for practices that are meant to carry over to other work, so the strategy goes further than an application of this size strictly needs. Each layer states what it protects against, so layers can be dropped where a future project does not have that risk.
 
-The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, and a fresh Donetick can be provisioned over its REST API. One decision is open again: Verify, the snapshot library, now requires a maintenance-fee declaration (chapter 13).
+The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use Verify under its open source exemption; the free alternatives were evaluated and found less complete (chapter 13).
 
 Next step: phase 0 as specified in appendix A.
 
@@ -83,7 +83,7 @@ Source: [diagrams/test-levels.puml](diagrams/test-levels.puml)
 | Level | System under test | Replaced | Tooling | Runs | Duration |
 |-------|-------------------|----------|---------|------|----------|
 | L1 Unit | One class or function | Donetick client (NSubstitute), clock | xUnit v3, FluentAssertions, NSubstitute | Every push | Seconds |
-| L1b Snapshot | Output of mappers and handlers | As L1 or L2 | Snapshot library (chapter 13) | Every push | Seconds |
+| L1b Snapshot | Output of mappers and handlers | As L1 or L2 | Verify | Every push | Seconds |
 | L2 Integration | Whole application in one process | Donetick (HTTP stub), clock | `WebApplicationFactory`, WireMock.Net, `FakeTimeProvider` | Every push | Seconds |
 | L3 Replay | Whole application, driven by recorded Apple sessions | Donetick (HTTP stub) | L2 harness, recorded fixtures, snapshots | Every push | Seconds |
 | L4 End-to-end | Built container image | Donetick (stub container) | Docker Compose, pytest, `caldav` library | Nightly, tags | Minutes |
@@ -113,7 +113,7 @@ Snapshot tests store the output once as an approved file and fail on any differe
 | SN-04 | Error responses: 401 headers, 403 and 405 with `Allow`, PROPPATCH 207 | |
 | SN-05 | `/health/json` body | Uptime and version scrubbed |
 
-Volatile values are scrubbed before comparison: the random global CTag, uptime and version. `DTSTAMP` needs no scrubbing because it derives from fixed test data. The choice of library is open again (chapter 13).
+Volatile values are scrubbed before comparison: the random global CTag, uptime and version. `DTSTAMP` needs no scrubbing because it derives from fixed test data. Snapshots are stored with their real extension (`.verified.ics`, `.verified.xml`), so they are readable in reviews; a mismatch fails with a line diff in the test output.
 
 ### 5.3 L2 Integration tests
 The integration harness hosts the real application in the test process and replaces only Donetick and the clock.
@@ -339,13 +339,13 @@ With the `Covers` trait in place, this table can be generated from the test asse
 |-------|--------------|-----------|
 | 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test |
 | 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % |
-| 2 Wire format | SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green |
+| 2 Wire format | Verify with the open source exemption (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green |
 | 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` |
 | 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented |
 | 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded |
 
 ## 13 Decisions
-Decided on 2026-10-17, except where marked open.
+Decided on 2026-10-17; the snapshot library on 2026-10-18.
 
 | Topic | Decision |
 |-------|----------|
@@ -356,17 +356,34 @@ Decided on 2026-10-17, except where marked open.
 | Recording Apple traffic | mitmproxy; no capture middleware in production code |
 | Coverage gate | Ratchet plus an 80 % floor after phase 1 |
 | `instructions.md` | Testing section updated to refer to this strategy |
-| **Snapshot library (open)** | See below |
+| Snapshot library | Verify, under its open source exemption; see below |
 
 Verify was the intended snapshot library. Since version 33 its build fails unless the project declares a sponsorship or an exemption (error SC021), and every Verify version released after 1 September 2026 falls under its maintenance fee. The fee applies to organisations with at least US$10,000 annual revenue that use the packages in revenue-generating work, starting at US$5 per month for fewer than 40 employees; open source projects without revenue are exempt.
 
-| Option | Consequence |
-|--------|-------------|
-| A. Verify 33 or later with the open source exemption declared in `Directory.Build.props` | Allowed for this repository (MIT, no revenue); the exemption is time-bounded (at most 12 months) and must be renewed. For paid client work the fee would apply |
-| B. Pin `Verify.XunitV3` 32.0.0, the last version published before the fee date (2026-08-26) | No fee, but no updates; compatibility with xunit.v3 4.x still to be checked |
-| C. A small in-house approval helper (compare with a `.verified` file, write `.received` on mismatch, fail with a diff) | No dependency and reusable in client work; less tooling (no diff-tool integration, scrubbers by hand) |
+Free alternatives were checked on 2026-10-18, each with a spike on xunit.v3 4.0.2 and Microsoft.Testing.Platform:
 
-Recommendation: A for this repository, because it is what Verify intends for non-revenue open source and it gives the full tool. If the practice is meant to transfer to paid client work without extra cost, choose C. Phase 2 cannot start before this is decided.
+| Library | Licence | Maintenance | Result |
+|---------|---------|-------------|--------|
+| Verify.XunitV3 33.3.4 | MIT, maintenance fee for revenue-generating use | Very active (release 2026-10-16) | Works with the exemption declared. Keeps the `.ics` extension; a mismatch prints a line diff; built-in scrubbers and converters for XML, JSON and HTTP |
+| Snapshooter.Xunit3 1.3.1 | MIT | Last release 2026-02-24 | Works. Stores raw text in `__snapshots__/*.snap`; a mismatch prints a character-level string diff and writes a `__mismatch__` file; creates missing snapshots silently unless strict mode is on; scrubbing of text is manual; oriented at JSON object snapshots |
+| ApprovalTests 7.0.0 | Apache-2.0 | Last release 2025-07-03, last commit 2025-10-07 | Works. Keeps the extension; a mismatch only reports that the files differ, the diff comes from a local diff tool |
+| Shouldly 4.3.0 (`ShouldMatchApproved`) | BSD-3-Clause | Active repository, last release 2025-01-23 | Works on its own. Failed with `MissingMethodException` next to a newer DiffEngine; adds a second assertion library next to FluentAssertions |
+| In-house helper | n/a | Own code | Possible, but scrubbers, diff output and the approval workflow have to be built and maintained |
+
+None of the free options matches Verify on output quality, scrubbing and maintenance at the same time, so the decision is option A: Verify 33 with the open source exemption, which fits this repository (MIT, no revenue). The exemption is declared in a `Directory.Build.props` under `tests/` (task P2-01) and is valid for at most 12 months:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <Verify_SponsorshipExemption>OpenSource</Verify_SponsorshipExemption>
+    <Verify_SponsorshipExemptionUntil>2027-10</Verify_SponsorshipExemptionUntil>
+  </PropertyGroup>
+</Project>
+```
+
+The declaration has to be renewed before November 2027; after that month the build fails with SC021 again, which makes a missed renewal visible rather than silent.
+
+For paid client work the same pattern applies, but the client organisation falls under the fee if it has the revenue. Where that is not acceptable, Snapshooter is the most complete licence-free fallback, with strict mode enabled in CI.
 
 ## 14 Reusable pattern
 The approach generalises to other services that sit between clients and a third-party API:
@@ -393,11 +410,18 @@ Phase 0 prepares the repository so that phase 1 only adds tests. Each task is sm
 | P0-06 | Create `tests/DonetickCalDav.IntegrationTests` with the harness: host factory (settings via `UseSetting`), WireMock server per test class, `FakeTimeProvider`, CalDAV test client with Basic auth | One smoke test (IT-01 discovery) passes |
 | P0-07 | Update `instructions.md` (stack and testing sections) and the technical design chapter 16 when the projects change | Documentation matches the repository |
 
+Phase 2 starts with one preparatory task:
+
+| ID | Task | Acceptance criteria |
+|----|------|---------------------|
+| P2-01 | Add `Verify.XunitV3` and `tests/Directory.Build.props` with the open source exemption from chapter 13 | A first snapshot test passes; the build shows no SC021 error |
+
 Package versions to pin, checked on nuget.org and PyPI on 2026-10-17:
 
 | Package | Version | Used by |
 |---------|---------|---------|
 | xunit.v3 | 4.0.2 | Both test projects |
+| Verify.XunitV3 | 33.3.4 | Snapshot tests (phase 2), with the open source exemption |
 | xunit.runner.visualstudio | 4.0.1 | Both test projects (IDE discovery) |
 | Microsoft.NET.Test.Sdk | 18.11.0 | Both test projects |
 | FluentAssertions | 7.2.2 | Both test projects (last Apache-2.0 version) |
@@ -424,4 +448,6 @@ Spikes run on 2026-10-17 in a scratch copy of the repository, with .NET SDK 10.0
 | Can xunit v3 4.x run under `dotnet test` with the .NET 10 SDK without changes? | No. It requires opting into Microsoft.Testing.Platform in `global.json`, and then every test project in the solution must use it | Build error on VSTest; the existing v2 project was rejected in MTP mode |
 | How are tests filtered by trait under Microsoft.Testing.Platform? | `--filter-trait "Name=Value"`; JUnit, HTML and CTRF reports are built in | `dotnet test --help` on the spike project |
 | Can Verify 33 be used without configuration? | No. Build error SC021 until a sponsorship or exemption is declared | Restore and build of `Verify.XunitV3` 33.3.4 |
+| Does Verify 33 work on xunit.v3 4.x and Microsoft.Testing.Platform with the exemption declared? | Yes. The first run writes `.received.ics`; after approval the test passes; a changed `SUMMARY` fails with a line diff | Spike with `Directory.Build.props`, 2026-10-18 |
+| Do the free alternatives work on the same stack? | Snapshooter, ApprovalTests and Shouldly all work; details and limitations in chapter 13 | Same spike, one test per library |
 | Can a fresh Donetick be provisioned without the web UI? | Yes, by the flow in 5.6 | Reading the Donetick source at commit `9d9921d`; to be confirmed against a container in phase 4 |
