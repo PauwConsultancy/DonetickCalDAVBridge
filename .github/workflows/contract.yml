@@ -1,0 +1,61 @@
+# L5 contract tests against a real Donetick (docs/testing-strategy.md, 5.6), weekly and on demand,
+# for example before upgrading Donetick. The Donetick version is a build argument of
+# tests/e2e/donetick/Dockerfile (tag and checksum).
+name: Donetick contract
+
+on:
+  schedule:
+    - cron: "41 4 * * 1" # Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Contract against a real Donetick
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COMPOSE: docker compose -f tests/e2e/docker-compose.e2e.yml --profile contract --profile contract-bridge
+      E2E_ENV: compose
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install test runner
+        run: pip install -r tests/e2e/requirements.txt
+
+      - name: Create test certificates
+        run: tests/e2e/certs/generate.sh
+
+      - name: Build images
+        run: $COMPOSE build
+
+      - name: Run contract tests
+        run: pytest tests/e2e -m contract --junitxml=artifacts/contract-results.xml
+
+      - name: Test summary
+        if: ${{ !cancelled() }}
+        run: python3 tests/ci/junit_summary.py artifacts
+
+      - name: Container logs
+        if: ${{ failure() }}
+        run: $COMPOSE logs --no-color
+
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: contract-results
+          path: artifacts/contract-results.xml
+          if-no-files-found: ignore
+
+      - name: Stop containers
+        if: ${{ always() }}
+        run: $COMPOSE down -v

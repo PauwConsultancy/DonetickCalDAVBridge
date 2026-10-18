@@ -42,3 +42,6 @@ appsettings.*.json
 docker-compose.yml
 *.pfx
 *.key
+
+## End-to-end test certificates (tests/e2e/certs/generate.sh)
+tests/e2e/certs/out/

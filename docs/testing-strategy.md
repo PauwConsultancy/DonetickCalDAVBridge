@@ -16,7 +16,7 @@ The project is deliberately used as a reference case for practices that are mean
 
 The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use a small in-house helper of about 75 lines (prototype in appendix C) instead of a library: Verify now carries a maintenance fee for revenue-generating use, and the free alternatives are less complete (chapter 13).
 
-Next step: phase 4 (container end-to-end and contract tests); phases 0 to 3 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
+Next step: phase 5 (extras); phases 0 to 4 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
 
 ## 1 Purpose and scope
 This document defines how the bridge is tested: which risks matter, which test levels address them, the tools, test data, conventions, the CI pipeline with its quality gates, and a phased roadmap.
@@ -194,7 +194,7 @@ L4 runs the image built from the `Dockerfile` in a Compose network with a Doneti
 
 Source: [diagrams/test-e2e-topology.puml](diagrams/test-e2e-topology.puml)
 
-The runner uses pytest with the Python `caldav` library, a mature client that is independent of Apple. This catches places where the bridge only works because of Apple-specific behaviour. The stub is WireMock.Net in its container image, loading the same mapping files as L2.
+The runner uses pytest with the Python `caldav` library, a mature client that is independent of Apple. This catches places where the bridge only works because of Apple-specific behaviour. The stub is WireMock.Net in a container, loading the same mapping files as L2.
 
 | ID | Scenario |
 |----|----------|
@@ -210,6 +210,15 @@ The runner uses pytest with the Python `caldav` library, a mature client that is
 | E2E-10 | Health endpoint (and Docker `HEALTHCHECK` once finding F-18 is addressed) |
 | E2E-11 | Chaos: stop the stub mid-run; reads keep working, writes return 502, service recovers when the stub returns |
 
+Implementation (phase 4), in `tests/e2e` (see its README):
+
+- `docker-compose.e2e.yml` with profile `stub`: the stub, the bridge built from the `Dockerfile`, and a second bridge with GroupByLabel for E2E-07. HTTPS uses a throwaway CA from `certs/generate.sh`.
+- The stub image is built from the `dotnet-wiremock` tool (2.19.0, the same WireMock.Net version as L2) rather than the WireMock.Net Docker image, whose tags could not be verified from the build environment; this also pins the version by NuGet.
+- pytest runs on the host and reaches the containers through published ports, instead of in a runner container as first drawn; that keeps failures debuggable and needs no extra image.
+- `environment.py` has a compose backend (CI) and a local backend that runs the published bridge, the stub tool and Donetick as processes, for machines without Docker. All tests passed with the local backend on 2026-10-18; the compose backend runs for the first time in CI, because no container registry was reachable while building this.
+- E2E-10 checks the health endpoint; the Docker `HEALTHCHECK` part is skipped until finding F-18 adds one.
+- `.github/workflows/e2e.yml` runs the suite nightly, on tags and on demand, and shows the container logs on failure.
+
 ### 5.6 L5 Contract tests against a real Donetick
 The bridge relies on assumptions about the eAPI that no stub can verify. L5 runs the same Compose setup with a real Donetick container (`donetick/donetick`, pinned version, SQLite) and checks those assumptions directly against the API.
 
@@ -222,8 +231,10 @@ The bridge relies on assumptions about the eAPI that no stub can verify. L5 runs
 | CT-05 | `updatedAt` changes when labels, priority or description change | F-04 (assumption) |
 | CT-06 | Delete removes the chore from the list | UC-06 |
 | CT-07 | Wrong `secretkey` is rejected | Security |
+| CT-08 | The bridge serves the chores of the real Donetick | UC-02 |
+| CT-09 | Create and complete through the bridge arrive in the real Donetick | UC-03, UC-05 |
 
-Provisioning a fresh Donetick needs no web UI. The flow below was derived from the Donetick source (commit `9d9921d`, 2026-10-16) and is confirmed in phase 4:
+Provisioning a fresh Donetick needs no web UI. The flow below was derived from the Donetick source (commit `9d9921d`, 2026-10-16) and confirmed against the v0.1.82 release on 2026-10-18 (`tests/e2e/donetick_api.py`):
 
 1. Start the container with `DT_ENV=selfhosted` and `DT_SQLITE_PATH`; it listens on port 2021 and offers `GET /api/v1/health` for readiness. Sign-up stays enabled unless `DONETICK_DISABLE_SIGNUP=true`.
 2. `POST /api/v1/auth/` with `username` (4 to 20 characters, lowercase), `password` (8 to 64), `email` and optional `displayName` creates the user.
@@ -231,6 +242,19 @@ Provisioning a fresh Donetick needs no web UI. The flow below was derived from t
 4. `POST /api/v1/users/tokens` with `{"name": "..."}` and `Authorization: Bearer <access_token>` returns `{"res": {"token": "dt_..."}}`. That token is the `secretkey` for the eAPI.
 
 The auth routes are rate limited, so the runner provisions once per run, not per test.
+
+Implementation (phase 4): profile `contract` starts Donetick built from the official release binary (`tests/e2e/donetick/Dockerfile`, pinned by tag and SHA-256, because the Docker Hub tag could not be verified); the tests provision a user and token, seed the reference chores and then start the bridge (profile `contract-bridge`) with that token. `.github/workflows/contract.yml` runs weekly and on demand. All checks passed against v0.1.82 on 2026-10-18, with these answers to the open questions:
+
+| Check | Answer for v0.1.82 |
+|-------|--------------------|
+| CT-02 | A date-only due date gets the current UTC time of day (for example `2030-03-04T06:12:31Z`); create answers 201 |
+| CT-03 | A daily chore moves exactly one day on completion and keeps its time; a completed one-off chore disappears from the list |
+| CT-04 | Omitting `description` or `dueDate` keeps the stored value, so assumption L-07 holds |
+| CT-05 | `updatedAt` changes when the description (external API) or the priority (internal API) changes; labels are not checked yet. Finding F-04 is smaller than feared |
+| CT-06 | Deleting an already deleted chore fails, which the bridge turns into 502 (finding F-25) |
+| CT-01 | The list is a plain array; `frequencyMetadata.time` is an RFC3339 timestamp (finding F-23); no fields disappeared since the recorded fixtures |
+
+The same payloads are recorded in `tests/fixtures/donetick/recorded/v0.1.82` with `tests/e2e/record_donetick_fixtures.py`; re-record after a Donetick upgrade.
 
 Consumer-driven contract tools such as Pact were considered. They need the provider to run verification, and Donetick is not under our control, so the fixture-plus-live-check approach is used instead.
 
@@ -382,7 +406,7 @@ With the `Covers` trait in place, this table can be generated from the test asse
 | 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % | Done 2026-10-18; 91.5 % |
 | 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green | Done 2026-10-18, with synthetic RP sessions until recordings exist |
 | 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` | Done 2026-10-18; making it required is a GitHub setting |
-| 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented | Open |
+| 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented | Done 2026-10-18 with the local backend; first container run in CI |
 | 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded | Open |
 
 ## 13 Decisions
@@ -473,7 +497,11 @@ Package versions to pin, checked on nuget.org and PyPI on 2026-10-17:
 | NBomber | 6.7.1 | Phase 5, optional |
 | caldav (Python) | 3.5.0 | L4 runner |
 | pytest (Python) | 9.1.1 | L4 and L5 runner |
-| donetick/donetick (image) | release v0.1.82 | L5; latest stable tag in the Donetick repository, image tag to confirm on Docker Hub |
+| requests (Python) | 2.34.2 | L4 and L5 runner |
+| Donetick | release v0.1.82, binary SHA-256 `16430f8e...e77f8` | L5, built from the release binary (`tests/e2e/donetick/Dockerfile`) |
+| dotnet-wiremock (tool) | 2.19.0 | L4 stub image and local runs |
+| mitmproxy | 12.2.3 | Recording client sessions (L3) |
+| actionlint | 1.7.12 | Checking the workflows |
 
 ## Appendix B Verified assumptions
 Spikes run on 2026-10-17 in a scratch copy of the repository, with .NET SDK 10.0.112. None of this code is in the repository.

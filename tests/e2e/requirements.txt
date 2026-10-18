@@ -1,0 +1,4 @@
+# L4 and L5 test runner. Versions checked on PyPI on 2026-10-17.
+caldav==3.5.0
+pytest==9.1.1
+requests==2.34.2

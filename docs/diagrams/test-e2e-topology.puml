@@ -3,33 +3,37 @@
 
 title Container end-to-end and contract topology (L4, L5)
 
-node "CI runner or developer machine (Docker)" {
-  node "compose network: e2e" {
-    node "bridge\nimage built from Dockerfile" as bridge
-    node "donetick-stub\nWireMock.Net image,\nsame mappings as L2" as stub
-    node "donetick-real\ndonetick image + SQLite,\npinned version" as real
-    node "e2e-runner\npytest + caldav library" as runner
-    folder "certs\nself-signed, test only" as certs
+node "CI runner or developer machine" {
+  node "pytest runner\ncaldav library, requests" as runner
+  folder "certs\nthrowaway CA, test only" as certs
+  node "Docker compose network" {
+    node "bridge :5232\nimage from Dockerfile" as bridge
+    node "bridge-labels :5233\nsame image, GroupByLabel" as labels
+    node "donetick-stub :9091\ndotnet-wiremock 2.19.0,\nsame mappings as L2" as stub
+    node "donetick :2021\nrelease binary v0.1.82,\nSQLite" as real
+    node "bridge-contract :5234\nsame image" as cbridge
   }
 }
 
 runner --> bridge : CalDAV over HTTPS\n(Basic auth)
-bridge --> stub : eAPI\n(profile: stub)
-bridge ..> real : eAPI\n(profile: contract)
-runner ..> stub : admin API:\nseed and verify
-runner ..> real : eAPI:\nseed and verify
+runner --> labels : CalDAV over HTTPS
+bridge --> stub : eAPI
+labels --> stub : eAPI
+runner ..> stub : admin API:\nverify requests
+runner ..> real : provision user and token,\nseed, contract checks
+runner ..> cbridge : CalDAV over HTTPS
+cbridge ..> real : eAPI
 bridge ..> certs : mounted read-only
 
 note right of real
-  Contract profile only.
-  Open question: provisioning
-  a user and an API key
-  automatically.
+  Profile contract. The runner provisions
+  a user and an API token over the REST
+  API, then starts bridge-contract with it.
 end note
 
 note bottom of runner
-  Also checks container behaviour:
-  health endpoint, restart rebuilds the cache,
-  invalid configuration exits non-zero.
+  Also checks container behaviour: restart keeps
+  ETags, invalid configuration exits non-zero,
+  stub outage gives 502 and the service recovers.
 end note
 @enduml

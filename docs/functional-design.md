@@ -373,8 +373,8 @@ The limitations below follow from what the Donetick eAPI supports, from how Appl
 | L-04 | Moving a task between lists is rejected (UC-08) | The client shows an error and the task stays in place |
 | L-05 | Apple Reminders ignores categories and hashtags on CalDAV accounts (BR-10) | In Apple clients, labels are visible only as separate lists (GroupByLabel) |
 | L-06 | The client-UID mapping for newly created tasks is lost on restart | A follow-up request in the short window after creating a task may not find it |
-| L-07 | Clearing notes or removing the due date in the client is not sent to Donetick | **Assumption:** the old value returns after the next refresh |
-| L-08 | Only the date of a due date set in the client is sent, not the time of day | The time shown afterwards is the time Donetick assigns |
+| L-07 | Clearing notes or removing the due date in the client is not sent to Donetick | The old value returns after the next refresh (Donetick keeps omitted fields, contract check CT-04) |
+| L-08 | Only the date of a due date set in the client is sent, not the time of day | The time shown afterwards is the time Donetick assigns: the current UTC time of day (contract check CT-02) |
 | L-09 | Un-completing a task is not possible (BR-05) | The completion in Donetick stays |
 | L-10 | A task created in an already completed state is not stored (BR-14) | The task disappears after refresh |
 | L-11 | List properties set in the client are not stored (UC-09) | Client-side changes to list colour or order may revert |
