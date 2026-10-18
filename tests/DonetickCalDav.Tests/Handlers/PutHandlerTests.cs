@@ -3,6 +3,7 @@ using DonetickCalDav.CalDav.Handlers;
 using DonetickCalDav.Configuration;
 using DonetickCalDav.Donetick;
 using DonetickCalDav.Donetick.Models;
+using DonetickCalDav.Testing;
 using DonetickCalDav.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;

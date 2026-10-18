@@ -1,6 +1,6 @@
 using DonetickCalDav.CalDav.VTodo;
 using DonetickCalDav.Donetick.Models;
-using DonetickCalDav.Tests.Helpers;
+using DonetickCalDav.Testing;
 using FluentAssertions;
 using Ical.Net;
 using Ical.Net.CalendarComponents;

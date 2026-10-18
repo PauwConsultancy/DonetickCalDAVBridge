@@ -59,6 +59,11 @@ builder.Services.AddHttpClient<IDonetickApiClient, DonetickApiClient>(client =>
     });
 });
 
+// -- Clock --
+// One TimeProvider for the whole app: ChoreSyncService uses it for its delays, and the Polly
+// retry pipeline picks it up from DI. Tests replace it with a fake clock.
+builder.Services.AddSingleton(TimeProvider.System);
+
 // -- Cache, calendar resolver, client tracking, and background sync --
 builder.Services.AddSingleton<ChoreCache>();
 builder.Services.AddSingleton<CalendarResolver>();
@@ -150,3 +155,9 @@ static X509Certificate2? LoadCertificate(TlsSettings? tls)
         "TLS is configured but no certificate provided. " +
         "Set either CalDav__Tls__PfxPath or both CalDav__Tls__CertPath and CalDav__Tls__KeyPath.");
 }
+
+/// <summary>
+/// Makes the compiler-generated entry point class public, so integration tests can host the
+/// application with <c>WebApplicationFactory&lt;Program&gt;</c>.
+/// </summary>
+public partial class Program { }

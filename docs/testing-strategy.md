@@ -1,5 +1,5 @@
 # Donetick CalDAV Bridge - Testing Strategy
-Status: accepted on 2026-10-17, snapshot library decided on 2026-10-18; implementation not started. Applies to the code after the Ical.Net 5 upgrade (commit `0209644`).
+Status: accepted on 2026-10-17, snapshot library decided on 2026-10-18; implementation in progress, see the status column in chapter 12. Applies to the code after the Ical.Net 5 upgrade (commit `0209644`).
 
 ## Summary
 The bridge has a solid unit test suite (210 tests) but nothing that exercises the application as a whole. Measured line coverage of hand-written code is 44 %; the request pipeline, authentication, PROPFIND, REPORT, the sync service and the startup code have no coverage at all. The Ical.Net 5 upgrade showed what that costs: a changed `DTSTART` value type and a concurrency defect only surfaced through ad-hoc output comparison and stress runs.
@@ -16,7 +16,7 @@ The project is deliberately used as a reference case for practices that are mean
 
 The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use a small in-house helper of about 75 lines (prototype in appendix C) instead of a library: Verify now carries a maintenance fee for revenue-generating use, and the free alternatives are less complete (chapter 13).
 
-Next step: phase 0 as specified in appendix A.
+Next step: phase 1 (integration scenarios IT-02 to IT-16); phase 0 is done.
 
 ## 1 Purpose and scope
 This document defines how the bridge is tested: which risks matter, which test levels address them, the tools, test data, conventions, the CI pipeline with its quality gates, and a phased roadmap.
@@ -253,8 +253,9 @@ A short checklist, run before each release on macOS and once on iOS: [testing/ap
 
 ```text
 global.json                           opts dotnet test into Microsoft.Testing.Platform
-Directory.Packages.props              central package versions for all test projects
 tests/
+  Directory.Build.props               shared settings of the test projects (target framework, nullable)
+  Directory.Packages.props            central package versions for all test projects
   DonetickCalDav.Tests/               L1 unit and L1b snapshot tests (existing project)
     Snapshots/                        approved snapshot files
   DonetickCalDav.IntegrationTests/    L2 and L3: WebApplicationFactory, WireMock.Net
@@ -270,6 +271,7 @@ docs/testing/
   apple-acceptance.md                 L6 checklist
 ```
 
+- **Package versions:** central package management is scoped to `tests/`. The application project keeps its own versions, because the `Dockerfile` copies only `src/DonetickCalDav` into the build stage and a root `Directory.Packages.props` would not be there.
 - **Naming:** unit tests keep `MethodName_Scenario_ExpectedOutcome`; integration tests use `Feature_Scenario_ExpectedOutcome`, for example `Complete_RecurringChore_ReloadsCacheAndOmitsETag`.
 - **Traits:** `[Trait("Level", "Integration")]` for filtering, `[Trait("Covers", "UC-05")]` for traceability, `[Trait("KnownIssue", "F-01")]` for characterization tests. Under Microsoft.Testing.Platform the filter is `dotnet test --project <project> --filter-trait "Level=Integration"` (verified).
 - **Snapshots:** approve locally with `SNAPSHOT_ACCEPT=1 dotnet test --project <project>`, then review the changed `.verified` files in the commit like any other code change.
@@ -281,8 +283,10 @@ Two small changes make the code testable without changing behaviour:
 
 | Change | Why | Status |
 |--------|-----|--------|
-| Add `public partial class Program { }` at the end of `Program.cs` | `WebApplicationFactory<Program>` needs an accessible entry point type | Verified in a spike |
-| Register `TimeProvider.System` and use it in `ChoreSyncService` for the startup delay, the startup retry back-off and the poll interval | Lets tests control the sync timing. Polly already uses a registered `TimeProvider`, so the HTTP retries need no change | Polly part verified; sync part to build |
+| Add `public partial class Program { }` at the end of `Program.cs` | `WebApplicationFactory<Program>` needs an accessible entry point type | Done in phase 0 |
+| Register `TimeProvider.System` and use it in `ChoreSyncService` for the startup delay, the startup retry back-off and the poll interval | Lets tests control the sync timing. Polly already uses a registered `TimeProvider`, so the HTTP retries need no change | Done in phase 0; `ChoreSyncServiceTests` drives the timing with fake time |
+
+Fake time only releases delays that already exist: advancing the clock before the code under test has started its delay makes that delay wait from the new time, and the test hangs. The harness therefore uses `TestTimeProvider` (in `DonetickCalDav.Testing`), a `FakeTimeProvider` that records the timers it creates. A test waits until the expected delay is pending (`WaitForTimerAsync`, `AdvanceWhenScheduledAsync`) and only then advances, so there are no sleeps and no races, and the presence of the expected delay is itself asserted.
 
 A third seam was considered: resolving the `HttpClient` base address and API key from `IOptions<AppSettings>` instead of the setup-time snapshot. The spike showed that `UseSetting` already reaches those values, so this refactor is not needed for testing. It remains a small clean-up, because the startup log line also prints the snapshot value.
 
@@ -337,14 +341,14 @@ With the `Covers` trait in place, this table can be generated from the test asse
 
 ## 12 Roadmap
 
-| Phase | Deliverables | Done when |
-|-------|--------------|-----------|
-| 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test |
-| 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % |
-| 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green |
-| 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` |
-| 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented |
-| 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded |
+| Phase | Deliverables | Done when | Status |
+|-------|--------------|-----------|--------|
+| 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test | Done 2026-10-18 |
+| 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % | Open |
+| 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green | Open |
+| 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` | Open |
+| 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented | Open |
+| 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded | Open |
 
 ## 13 Decisions
 Decided on 2026-10-17; the snapshot library on 2026-10-18.
@@ -403,7 +407,7 @@ Phase 0 prepares the repository so that phase 1 only adds tests. Each task is sm
 | ID | Task | Acceptance criteria |
 |----|------|---------------------|
 | P0-01 | Add `global.json` with `{"test": {"runner": "Microsoft.Testing.Platform"}}` | `dotnet test --solution donetick_caldav.sln` runs on Microsoft.Testing.Platform |
-| P0-02 | Add `Directory.Packages.props` (central package management) with the versions below; remove versions from the `.csproj` files | Both projects restore with identical package versions |
+| P0-02 | Add `tests/Directory.Packages.props` (central package management) with the versions below; remove versions from the test `.csproj` files. Scoped to `tests/` so the image build is unaffected (chapter 8) | All test projects restore with identical package versions |
 | P0-03 | Migrate `DonetickCalDav.Tests` to xUnit v3: replace `xunit` with `xunit.v3`, set `<OutputType>Exe</OutputType>`, keep `xunit.runner.visualstudio` for IDE discovery, fix the few API differences (`IAsyncLifetime` returns `ValueTask`, `Xunit.Abstractions` is gone) | All 210 tests pass, zero warnings |
 | P0-04 | Test seam: `public partial class Program { }` | `WebApplicationFactory<Program>` compiles |
 | P0-05 | Test seam: register `TimeProvider.System`; inject it into `ChoreSyncService` and use it for all delays | Existing behaviour unchanged; a unit test advances fake time through the startup retries |

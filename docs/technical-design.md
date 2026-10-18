@@ -470,7 +470,13 @@ TLS can be provided in three ways: `tailscale serve` in front of plain HTTP, bui
 
 ## 16 Testing
 ### 16.1 Test suite
-`tests/DonetickCalDav.Tests` targets `net10.0` and references the application project (`InternalsVisibleTo` exposes internal members such as `AdjustToScheduledTime`).
+Three projects under `tests/`, all on xUnit v3 and Microsoft.Testing.Platform (opted in through `global.json`), with package versions in `tests/Directory.Packages.props`:
+
+- `DonetickCalDav.Tests`: unit tests; references the application project (`InternalsVisibleTo` exposes internal members such as `AdjustToScheduledTime` and the `ChoreSyncService` timings).
+- `DonetickCalDav.IntegrationTests`: the application hosted in-process with `WebApplicationFactory<Program>`, Donetick replaced by a WireMock.Net stub and the clock by a fake `TimeProvider` (testing strategy, 5.3).
+- `DonetickCalDav.Testing`: shared helpers, no tests: `TestChoreFactory`, `TestTimeProvider` and the integration harness (`BridgeHost`, `DonetickStub`, `CalDavClient`).
+
+The table lists the unit test classes.
 
 | Area | Test class | Test methods |
 |------|------------|--------------|
@@ -487,11 +493,12 @@ TLS can be provided in three ways: `tailscale serve` in front of plain HTTP, bui
 | Priority mapping | `PriorityMapperTests` | 5 |
 | GET handler | `GetHandlerTests` | 4 |
 | DELETE handler | `DeleteHandlerTests` | 3 |
+| Background sync timing | `ChoreSyncServiceTests` | 4 |
 
-The counts are `[Fact]` and `[Theory]` attributes (162 in total); theories run more cases. Helpers: `TestChoreFactory` (named chore scenarios on a fixed base date) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
+The counts are `[Fact]` and `[Theory]` attributes (166 in total); theories run more cases. Helpers: `TestChoreFactory` (named chore scenarios on a fixed base date, in `DonetickCalDav.Testing`) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
 
 ### 16.2 Coverage gaps
-No tests exist for `PropFindHandler`, `ReportHandler`, `PropPatchHandler`, `CalDavMiddleware`, `CalDavAuthenticationHandler`, `StatusPageHandler`, `ChoreSyncService` or the startup composition. There are no integration tests against a CalDAV client or a Donetick instance yet; the [testing strategy](testing-strategy.md) plans them.
+`PropFindHandler`, `ReportHandler`, `PropPatchHandler`, `CalDavMiddleware`, `CalDavAuthenticationHandler`, `StatusPageHandler` and the startup composition are only covered by the discovery integration test (IT-01) so far; the remaining integration scenarios, container tests and contract tests against a real Donetick follow the roadmap in the [testing strategy](testing-strategy.md).
 
 `VTodoMapperTests.ToIcsString_ConcurrentCalls_DoNotThrow` serialises 20,000 chores in parallel and fails if a shared serializer is reintroduced.
 

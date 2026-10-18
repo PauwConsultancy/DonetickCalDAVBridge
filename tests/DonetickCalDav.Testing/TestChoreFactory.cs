@@ -1,6 +1,6 @@
 using DonetickCalDav.Donetick.Models;
 
-namespace DonetickCalDav.Tests.Helpers;
+namespace DonetickCalDav.Testing;
 
 /// <summary>
 /// Convenience factory for creating DonetickChore instances in tests.

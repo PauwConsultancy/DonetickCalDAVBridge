@@ -1,5 +1,5 @@
 using DonetickCalDav.Cache;
-using DonetickCalDav.Tests.Helpers;
+using DonetickCalDav.Testing;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 

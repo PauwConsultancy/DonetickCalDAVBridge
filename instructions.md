@@ -22,7 +22,7 @@ This is deliberate — see "In-memory cache only" below.
 - **No ORM.** No database. No persistent store of any kind inside this service.
 - **Ical.Net 5** for VTODO parsing and serialisation (undocumented exception surface — wrap broadly; create a `CalendarSerializer` per call, a shared one is not thread-safe)
 - **Microsoft.Extensions.Http.Resilience** (Polly) for retry — not a custom retry loop
-- **xUnit + FluentAssertions + NSubstitute** for tests (moving to xUnit v3 on Microsoft.Testing.Platform, see [docs/testing-strategy.md](docs/testing-strategy.md))
+- **xUnit v3 + FluentAssertions + NSubstitute** for tests, on Microsoft.Testing.Platform (`global.json`); integration tests add WebApplicationFactory, WireMock.Net and a fake `TimeProvider` (see [docs/testing-strategy.md](docs/testing-strategy.md))
 
 If a change requires adding persistence, an ORM, or a second user, stop and ask first —
 it is out of scope for this project's stated purpose.
@@ -170,9 +170,15 @@ or making the project accessible from the public internet by default.
 - Approach: [docs/testing-strategy.md](docs/testing-strategy.md) (accepted 2026-10-17). It defines the
   test levels (unit, snapshot, in-process integration, Apple traffic replay, container end-to-end,
   contract tests against a real Donetick, manual Apple acceptance), the CI gates and the roadmap
-- Today: xUnit + FluentAssertions + NSubstitute unit tests under `tests/DonetickCalDav.Tests`;
-  the other levels are planned from phase 0 onwards
+- Projects: `tests/DonetickCalDav.Tests` (unit and snapshot), `tests/DonetickCalDav.IntegrationTests`
+  (the real app in-process against a WireMock.Net Donetick stub, with fake time) and
+  `tests/DonetickCalDav.Testing` (shared helpers: test data, `TestTimeProvider`, integration harness).
+  Test package versions live in `tests/Directory.Packages.props`
+- Run: `dotnet test --solution donetick_caldav.sln`; one level: `dotnet test --project <project>
+  --filter-trait "Level=Integration"` (Microsoft.Testing.Platform syntax, not `--filter`)
 - `dotnet test` must pass and compile with zero warnings before any commit
+- Production code that waits or schedules uses the registered `TimeProvider` (`Task.Delay(delay,
+  timeProvider, ct)`), never a bare `Task.Delay`, so tests can control time
 - Mapping logic (VTODO ↔ ChoreLiteRequest, status, priority, recurrence-time preservation) is
   fully unit-tested — that is the riskiest code surface and the easiest to regress
 - Integration tests are no longer "intentionally minimal": the Ical.Net 5 upgrade showed that

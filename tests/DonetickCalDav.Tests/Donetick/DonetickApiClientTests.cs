@@ -19,7 +19,7 @@ public class DonetickApiClientTests
         var json = JsonSerializer.Serialize(chores);
         var client = CreateClient(json);
 
-        var result = await client.GetAllChoresAsync();
+        var result = await client.GetAllChoresAsync(TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(1);
         result[0].Name.Should().Be("Task 1");
@@ -33,7 +33,7 @@ public class DonetickApiClientTests
         var json = JsonSerializer.Serialize(wrapper);
         var client = CreateClient(json);
 
-        var result = await client.GetAllChoresAsync();
+        var result = await client.GetAllChoresAsync(TestContext.Current.CancellationToken);
 
         result.Should().HaveCount(1);
         result[0].Name.Should().Be("Wrapped");
@@ -44,7 +44,7 @@ public class DonetickApiClientTests
     {
         var client = CreateClient("[]");
 
-        var result = await client.GetAllChoresAsync();
+        var result = await client.GetAllChoresAsync(TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
     }
@@ -54,7 +54,7 @@ public class DonetickApiClientTests
     {
         var client = CreateClient("", HttpStatusCode.InternalServerError);
 
-        var act = () => client.GetAllChoresAsync();
+        var act = () => client.GetAllChoresAsync(TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<HttpRequestException>();
     }
@@ -66,7 +66,7 @@ public class DonetickApiClientTests
     {
         var client = CreateClient("", HttpStatusCode.OK);
 
-        var act = () => client.CompleteChoreAsync(42);
+        var act = () => client.CompleteChoreAsync(42, TestContext.Current.CancellationToken);
 
         await act.Should().NotThrowAsync();
     }
@@ -76,7 +76,7 @@ public class DonetickApiClientTests
     {
         var client = CreateClient("", HttpStatusCode.NotFound);
 
-        var act = () => client.CompleteChoreAsync(999);
+        var act = () => client.CompleteChoreAsync(999, TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<HttpRequestException>();
     }
