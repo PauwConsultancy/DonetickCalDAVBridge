@@ -82,6 +82,13 @@ public sealed class TestTimeProvider : FakeTimeProvider
         Advance(dueTime);
     }
 
+    /// <summary>Advances through each delay in turn, waiting for each to be scheduled first.</summary>
+    public async Task AdvanceThroughAsync(IEnumerable<TimeSpan> dueTimes, CancellationToken ct = default)
+    {
+        foreach (var dueTime in dueTimes)
+            await AdvanceWhenScheduledAsync(dueTime, ct: ct);
+    }
+
     // Timers whose fire time has passed are no longer pending. Cancelled delays stay in the list until
     // their fire time; that only matters for diagnostics.
     private void RemoveFired()

@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "body": {
+    "completionActions": null,
+    "id": 3,
+    "name": "Buy groceries",
+    "frequencyType": "once",
+    "frequency": 1,
+    "frequencyMetadata": null,
+    "nextDueDate": null,
+    "isRolling": false,
+    "assignedTo": null,
+    "assignees": [],
+    "assignStrategy": "no_assignee",
+    "isActive": false,
+    "notification": false,
+    "notificationMetadata": null,
+    "labelsV2": [
+      {
+        "id": 1,
+        "name": "Home",
+        "color": "#4A90D9",
+        "created_by": 1
+      }
+    ],
+    "circleId": 1,
+    "createdAt": "2026-10-18T06:07:15.925545039Z",
+    "updatedAt": "2026-10-18T08:07:15.978322242+02:00",
+    "createdBy": 1,
+    "updatedBy": 1,
+    "thingChore": null,
+    "status": 0,
+    "priority": 0,
+    "description": "Milk, bread",
+    "subTasks": [],
+    "requireApproval": false,
+    "isPrivate": false,
+    "syncVersion": 10
+  }
+}

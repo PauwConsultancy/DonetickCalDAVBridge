@@ -1,0 +1,38 @@
+{
+  "Guid": "6f1d7a52-0c4e-4b8e-9d55-2f1c3a9e0003",
+  "Title": "PUT /eapi/v1/chore/{id}: echoes the update for the chore in the path",
+  "Priority": 10,
+  "Request": {
+    "Path": {
+      "Matchers": [
+        {
+          "Name": "RegexMatcher",
+          "Pattern": "^/eapi/v1/chore/\\d+$"
+        }
+      ]
+    },
+    "Methods": [
+      "PUT"
+    ],
+    "Headers": [
+      {
+        "Name": "secretkey",
+        "Matchers": [
+          {
+            "Name": "ExactMatcher",
+            "Pattern": "test-api-key"
+          }
+        ]
+      }
+    ]
+  },
+  "Response": {
+    "StatusCode": 200,
+    "Headers": {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    "UseTransformer": true,
+    "TransformerType": "Handlebars",
+    "Body": "{\"id\":{{request.PathSegments.[3]}},\"name\":\"{{request.bodyAsJson.name}}\",\"description\":{{#if request.bodyAsJson.description.Value}}\"{{request.bodyAsJson.description}}\"{{else}}null{{/if}},\"frequencyType\":\"once\",\"frequency\":0,\"frequencyMetadata\":null,\"nextDueDate\":{{#if request.bodyAsJson.dueDate.Value}}\"{{request.bodyAsJson.dueDate}}T09:00:00Z\"{{else}}null{{/if}},\"isRolling\":false,\"assignedTo\":null,\"assignees\":[],\"assignStrategy\":\"no_assignee\",\"isActive\":true,\"labelsV2\":[],\"circleId\":1,\"createdAt\":\"2025-06-15T09:00:00Z\",\"updatedAt\":\"2025-06-15T12:00:00Z\",\"createdBy\":1,\"updatedBy\":1,\"status\":0,\"priority\":0}"
+  }
+}

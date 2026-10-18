@@ -1,0 +1,38 @@
+{
+  "Guid": "6f1d7a52-0c4e-4b8e-9d55-2f1c3a9e0005",
+  "Title": "DELETE /eapi/v1/chore/{id}: succeeds",
+  "Priority": 10,
+  "Request": {
+    "Path": {
+      "Matchers": [
+        {
+          "Name": "RegexMatcher",
+          "Pattern": "^/eapi/v1/chore/\\d+$"
+        }
+      ]
+    },
+    "Methods": [
+      "DELETE"
+    ],
+    "Headers": [
+      {
+        "Name": "secretkey",
+        "Matchers": [
+          {
+            "Name": "ExactMatcher",
+            "Pattern": "test-api-key"
+          }
+        ]
+      }
+    ]
+  },
+  "Response": {
+    "StatusCode": 200,
+    "Headers": {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    "BodyAsJson": {
+      "message": "Chore deleted successfully"
+    }
+  }
+}

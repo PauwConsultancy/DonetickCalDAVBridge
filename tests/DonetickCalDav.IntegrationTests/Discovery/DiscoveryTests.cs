@@ -9,7 +9,7 @@ namespace DonetickCalDav.IntegrationTests.Discovery;
 [Trait("Covers", "UC-01")]
 public class DiscoveryTests(DonetickStub donetick) : IntegrationTest(donetick)
 {
-    [Fact]
+    [Fact(Timeout = DefaultTimeout)]
     [Trait("Scenario", "IT-01")]
     public async Task Discovery_AppleAccountSetup_LeadsFromWellKnownToTheTaskCalendar()
     {

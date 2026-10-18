@@ -1,0 +1,37 @@
+{
+  "status": 201,
+  "body": {
+    "completionActions": null,
+    "id": 7,
+    "name": "Created by the recorder",
+    "frequencyType": "once",
+    "frequency": 0,
+    "frequencyMetadata": null,
+    "nextDueDate": "2026-11-02T06:07:15Z",
+    "isRolling": false,
+    "assignedTo": 1,
+    "assignees": [
+      {
+        "userId": 1
+      }
+    ],
+    "assignStrategy": "random",
+    "isActive": true,
+    "notification": false,
+    "notificationMetadata": null,
+    "labelsV2": [],
+    "circleId": 1,
+    "createdAt": "2026-10-18T06:07:15.957133449Z",
+    "updatedAt": "2026-10-18T08:07:15.957373326+02:00",
+    "createdBy": 1,
+    "updatedBy": 0,
+    "thingChore": null,
+    "status": 0,
+    "priority": 0,
+    "description": "Recorded payload",
+    "subTasks": [],
+    "requireApproval": false,
+    "isPrivate": false,
+    "syncVersion": 7
+  }
+}

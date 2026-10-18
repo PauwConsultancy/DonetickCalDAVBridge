@@ -132,4 +132,24 @@ public static class TestChoreFactory
         CreatedBy = 1,
         CircleId = 1,
     };
+
+    /// <summary>Creates an active one-off chore with the given labels (label ids follow the names).</summary>
+    public static DonetickChore Labeled(int id, string name, params string[] labels) => new()
+    {
+        Id = id,
+        Name = name,
+        FrequencyType = "no_repeat",
+        Status = 0,
+        Priority = 0,
+        IsActive = true,
+        NextDueDate = BaseDate.AddDays(2),
+        LabelsV2 = labels.Select((label, i) => new DonetickLabel { Id = 100 + i, Name = label }).ToList(),
+        CreatedAt = BaseDate,
+        UpdatedAt = BaseDate.AddHours(1),
+        CreatedBy = 1,
+        CircleId = 1,
+    };
+
+    /// <summary>The fixed reference time all factory chores are based on.</summary>
+    public static DateTime Base => BaseDate;
 }

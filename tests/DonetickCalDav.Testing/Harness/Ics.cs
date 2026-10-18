@@ -48,6 +48,23 @@ public static class Ics
     /// <summary>UID the bridge generates for a Donetick chore.</summary>
     public static string ChoreUid(int choreId) => $"donetick-{choreId}@donetick";
 
+    /// <summary>
+    /// The first content line of property <paramref name="name"/> (with its parameters), after
+    /// unfolding, for example <c>DUE;VALUE=DATE:20250616</c>; null when absent.
+    /// </summary>
+    public static string? Line(string ics, string name) =>
+        Unfold(ics).Split('\n')
+            .Select(l => l.TrimEnd('\r'))
+            .FirstOrDefault(l => l.StartsWith(name + ":", StringComparison.Ordinal)
+                                 || l.StartsWith(name + ";", StringComparison.Ordinal));
+
+    /// <summary>The value of property <paramref name="name"/> (text after the first colon); null when absent.</summary>
+    public static string? Value(string ics, string name) =>
+        Line(ics, name) is { } line ? line[(line.IndexOf(':') + 1)..] : null;
+
+    /// <summary>Joins folded lines (RFC 5545, 3.1).</summary>
+    public static string Unfold(string ics) => ics.Replace("\r\n ", "").Replace("\n ", "");
+
     private static string Escape(string text) =>
         text.Replace("\\", "\\\\").Replace(";", "\\;").Replace(",", "\\,").Replace("\n", "\\n");
 }

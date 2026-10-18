@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Integration test project (`tests/DonetickCalDav.IntegrationTests`): the bridge hosted in-process against a WireMock.Net Donetick stub with a fake clock, starting with the Apple discovery chain; shared test helpers in `tests/DonetickCalDav.Testing`
+- Integration test project (`tests/DonetickCalDav.IntegrationTests`): the bridge hosted in-process against a WireMock.Net Donetick stub with a fake clock; shared test helpers in `tests/DonetickCalDav.Testing`
+- Integration scenarios IT-01 to IT-16 (discovery, authentication, calendars, reports, GET, create, edit, complete, delete, rejected operations, input limits, Donetick faults, startup, health, concurrency) and characterization tests for open findings; line coverage of hand-written code rises from 46.7 % to 91.5 %
+- Test fixtures: WireMock mapping files for the Donetick eAPI and payloads recorded from Donetick v0.1.82, with the provisioning and recording scripts (`tests/e2e`)
+- Coverage report and gate (`tests/coverage`): merged Cobertura from all test projects, 80 % floor plus a ratchet
 
 ### Changed
 - Ical.Net 4.3.1 to 5.2.3 (v4 is out of support); code migrated to the v5 API
@@ -26,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `docs/` with a functional design, a technical design, a findings report and PlantUML diagrams (sources and rendered SVGs), reverse engineered from 0.7.1
 - README: link to the design documentation
 - Added a testing strategy (`docs/testing-strategy.md`) and an Apple acceptance checklist (`docs/testing/apple-acceptance.md`)
+- Findings F-23 to F-28 from the integration tests and a real Donetick: Preserve Scheduled Time cannot parse Donetick's timestamp format, a JSON object without `Res` empties the cache, timestamps outside UTC, DELETE of an already deleted chore, malformed base URL message, chunked PUT over 1 MB
 
 ## [0.7.1] — 2026-04-20
 

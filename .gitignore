@@ -28,6 +28,11 @@ desktop.ini
 out/
 artifacts/
 
+## Python (tests/e2e)
+__pycache__/
+.pytest_cache/
+.venv/
+
 ## Secrets — never commit real credentials
 appsettings.*.json
 docker-compose.yml

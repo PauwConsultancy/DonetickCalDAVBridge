@@ -356,7 +356,7 @@ The status and priority tables are in the functional design, BR-04 and BR-06.
 
 ### 11.2 Due date rules
 1. Start from `nextDueDate`, treated as UTC.
-2. If `PreserveScheduledTime`: `AdjustToScheduledTime` parses `frequencyMetadata.time` with `TimeOnly.TryParse`. With a resolvable `timezone` (`TimeZoneInfo.FindSystemTimeZoneById`), it converts to local time, replaces hour and minute (seconds zero) and converts back to UTC. Without a time zone, or when the zone is unknown, it replaces hour and minute in UTC. An empty or unparseable time leaves the value unchanged.
+2. If `PreserveScheduledTime`: `AdjustToScheduledTime` parses `frequencyMetadata.time` with `TimeOnly.TryParse`. With a resolvable `timezone` (`TimeZoneInfo.FindSystemTimeZoneById`), it converts to local time, replaces hour and minute (seconds zero) and converts back to UTC. Without a time zone, or when the zone is unknown, it replaces hour and minute in UTC. An empty or unparseable time leaves the value unchanged. Donetick 0.1.82 stores the time as an RFC3339 timestamp, which `TimeOnly.TryParse` rejects, so with current Donetick data the value is never adjusted (finding F-23).
 3. If `AllDayEvents`: `DUE` and `DTSTART` become date-only values (`VALUE=DATE`, no time zone) built from the **UTC** year, month and day, using `new CalDateTime(DateOnly)`. Each property gets its own instance.
 4. Otherwise: `DUE` is the UTC date-time; `DTSTART` is a date-only value (`VALUE=DATE`) of the UTC date. This is the shape Ical.Net 4 produced implicitly and that synced clients know; a unit test guards it. No `DURATION` is emitted next to `DUE`.
 
@@ -498,7 +498,7 @@ The table lists the unit test classes.
 The counts are `[Fact]` and `[Theory]` attributes (166 in total); theories run more cases. Helpers: `TestChoreFactory` (named chore scenarios on a fixed base date, in `DonetickCalDav.Testing`) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
 
 ### 16.2 Coverage gaps
-`PropFindHandler`, `ReportHandler`, `PropPatchHandler`, `CalDavMiddleware`, `CalDavAuthenticationHandler`, `StatusPageHandler` and the startup composition are only covered by the discovery integration test (IT-01) so far; the remaining integration scenarios, container tests and contract tests against a real Donetick follow the roadmap in the [testing strategy](testing-strategy.md).
+The integration tests (scenarios IT-01 to IT-16 of the [testing strategy](testing-strategy.md)) cover the request pipeline, authentication, PROPFIND, REPORT, PROPPATCH, the status endpoints, the sync service and the startup validation. Together with the unit tests they cover 91.5 % of the hand-written lines; the least covered files are `Program.cs` (TLS certificate loading, 74 %) and `ClientTracker` (pruning, 74 %). Open findings are pinned by characterization tests with the trait `KnownIssue`. Container tests and contract tests against a real Donetick follow the roadmap.
 
 `VTodoMapperTests.ToIcsString_ConcurrentCalls_DoNotThrow` serialises 20,000 chores in parallel and fails if a shared serializer is reintroduced.
 
@@ -512,7 +512,7 @@ The decisions below are recorded with their rationale in [../instructions.md](..
 | No RRULE | Apple's recurring VTODO handling is quirky; Donetick owns recurrence | Clients cannot show future occurrences |
 | Virtual calendars per label | Apple ignores `CATEGORIES` and hashtags on CalDAV accounts | Two or more labels fall back to the default list |
 | MOVE returns 403 | Delete plus create would strip metadata and history | Users get an error when dragging |
-| Throw on unknown JSON shape | An empty list would look like data loss | Sync logs errors until the contract is fixed |
+| Throw on unknown JSON shape | An empty list would look like data loss | Sync logs errors until the contract is fixed. In practice only non-object bodies throw; any JSON object reads as an empty list (finding F-26) |
 | Constant-time credential check | Prevents byte-wise timing probes | Length still observable |
 | Bounded `ClientTracker` | Prevents memory growth from rotating User-Agents | Oldest entries dropped |
 | Single-source version | One place to bump | none |

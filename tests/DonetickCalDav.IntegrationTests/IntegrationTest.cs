@@ -10,6 +10,9 @@ namespace DonetickCalDav.IntegrationTests;
 [Trait("Level", "Integration")]
 public abstract class IntegrationTest(DonetickStub donetick) : IClassFixture<DonetickStub>, IAsyncLifetime
 {
+    /// <summary>Per-test timeout in milliseconds. Fake time keeps tests fast; this only stops a hang.</summary>
+    protected const int DefaultTimeout = 30_000;
+
     private BridgeHost? _bridge;
 
     protected DonetickStub Donetick { get; } = donetick;

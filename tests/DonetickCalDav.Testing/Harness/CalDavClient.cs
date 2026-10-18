@@ -142,5 +142,11 @@ public sealed class DavResponse(HttpStatusCode status, IReadOnlyDictionary<strin
             .Select(ps => ps.Element(Dav.D + "prop")?.Element(property))
             .FirstOrDefault(p => p != null);
 
+    /// <summary>The <c>calendar-data</c> (ICS text) of the response for <paramref name="href"/>, or null.</summary>
+    public string? CalendarData(string href) => Property(href, Dav.C + "calendar-data")?.Value;
+
+    /// <summary>The <c>getetag</c> of the response for <paramref name="href"/>, or null.</summary>
+    public string? GetETag(string href) => Property(href, Dav.D + "getetag")?.Value;
+
     public override string ToString() => $"{(int)Status} {Status}\n{Body}";
 }

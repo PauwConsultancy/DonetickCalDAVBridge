@@ -16,7 +16,7 @@ The project is deliberately used as a reference case for practices that are mean
 
 The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use a small in-house helper of about 75 lines (prototype in appendix C) instead of a library: Verify now carries a maintenance fee for revenue-generating use, and the free alternatives are less complete (chapter 13).
 
-Next step: phase 1 (integration scenarios IT-02 to IT-16); phase 0 is done.
+Next step: phase 2 (snapshot tests and the Apple replay runner); phases 0 and 1 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
 
 ## 1 Purpose and scope
 This document defines how the bridge is tested: which risks matter, which test levels address them, the tools, test data, conventions, the CI pipeline with its quality gates, and a phased roadmap.
@@ -40,6 +40,8 @@ It complements the [functional design](functional-design.md) (what to verify), t
 | Compatibility with Apple clients | manual, ad hoc | n/a |
 
 Totals for hand-written code: 946 of 2,132 lines (44.4 %) and 308 of 779 branches (39.5 %), measured with coverlet on 2026-10-17. There is no CI; tests run when someone remembers.
+
+After phase 1 (2026-10-18), measured with Microsoft.Testing.Extensions.CodeCoverage, which counts lines differently: the unit tests alone cover 46.7 % of 1,658 lines, the integration tests alone 86.2 %, together 91.5 % of lines and 78.1 % of branches. `tests/coverage/coverage_report.py` produces the per-file table.
 
 Lessons from the Ical.Net 5 upgrade, each mapped to the layer that would have caught it:
 
@@ -146,7 +148,14 @@ Scenario catalogue:
 | IT-13 | Startup | Donetick down at start, available later: cache filled on a later poll; missing API key or invalid URL: host fails to start | UC-10, UC-12, FR-20, FR-23 |
 | IT-14 | Health and status | `/health/json` 503 with empty cache, 200 with chores; HTML page renders | UC-11 |
 | IT-15 | Concurrency | Parallel GET, REPORT and PUT requests produce no errors and a consistent cache | R5 |
-| IT-16 | Known issues (characterization) | F-01: completion succeeds but reload fails gives 502; F-02: POST is retried after a 5xx; F-13: health semantics | findings.md |
+| IT-16 | Known issues (characterization) | F-01: completion succeeds but reload fails gives 502; F-02: POST is retried after a 5xx; F-04, F-05, F-07, F-11, F-12, F-16, F-23. Findings that surface in another scenario are characterized there: F-03 and F-10 (IT-04), F-06 and F-13 (IT-14), F-08 and F-09 (IT-06, IT-07), F-25 (IT-09), F-26 (IT-12), F-27 (IT-13), F-28 (IT-11) | findings.md |
+
+How the catalogue is implemented (phase 1):
+
+- One test class per scenario under `tests/DonetickCalDav.IntegrationTests`, deriving from `IntegrationTest`: the WireMock stub is a class fixture that is reset before every test, and every test starts its own bridge, so tests never share state. Classes run in parallel.
+- Traits: `Level=Integration` (inherited from the base class), `Scenario=IT-xx`, `Covers=UC-xx/FR-xx`, and `KnownIssue=F-xx` on characterization tests.
+- Each test has a 30-second timeout; with fake time a test takes milliseconds to a second, so the timeout only stops a hang. The whole suite (about 130 test cases) runs in under 10 seconds, also on a single CPU core.
+- The reference mapping files are exercised by `MappingFileTests`, so a broken file fails at L2 before it breaks the L4 stub.
 
 ### 5.4 L3 Apple traffic replay
 Apple clients cannot run in CI, but their traffic can. A session is recorded once per major macOS or iOS version, sanitised, stored as a fixture and replayed through the L2 harness on every build. This turns "tested with Apple" from a one-off observation into a regression test.
@@ -344,7 +353,7 @@ With the `Covers` trait in place, this table can be generated from the test asse
 | Phase | Deliverables | Done when | Status |
 |-------|--------------|-----------|--------|
 | 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test | Done 2026-10-18 |
-| 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % | Open |
+| 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % | Done 2026-10-18; 91.5 % |
 | 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green | Open |
 | 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` | Open |
 | 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented | Open |
@@ -454,7 +463,10 @@ Spikes run on 2026-10-17 in a scratch copy of the repository, with .NET SDK 10.0
 | Does Verify 33 work on xunit.v3 4.x and Microsoft.Testing.Platform with the exemption declared? | Yes. The first run writes `.received.ics`; after approval the test passes; a changed `SUMMARY` fails with a line diff | Spike with `Directory.Build.props`, 2026-10-18 |
 | Do the free alternatives work on the same stack? | Snapshooter, ApprovalTests and Shouldly all work; details and limitations in chapter 13 | Same spike, one test per library |
 | Does an in-house helper cover this project's needs? | Yes, in about 75 lines: a new snapshot fails and writes a `.received` file; `SNAPSHOT_ACCEPT=1` approves it; an unchanged run passes; a changed `SUMMARY` fails with a line diff | Prototype in appendix C, 2026-10-18 |
-| Can a fresh Donetick be provisioned without the web UI? | Yes, by the flow in 5.6 | Reading the Donetick source at commit `9d9921d`; to be confirmed against a container in phase 4 |
+| Can a fresh Donetick be provisioned without the web UI? | Yes, by the flow in 5.6 | Reading the Donetick source at commit `9d9921d`; confirmed on 2026-10-18 against the v0.1.82 release binary (`tests/e2e/donetick_api.py`) |
+| Does the eAPI need a paid plan for update and complete? | Not when self-hosted: `PUT` and `/complete` require a Plus member, and self-hosted users always count as Plus (expiration 2999-12-31). On donetick.com they need a subscription | Donetick source; calls against v0.1.82 |
+| Does TestServer behave like Kestrel for synchronous body reads? | Yes, both forbid them, which exposed finding F-28; the published application answers 500 for the same request | Integration test and `curl` against the published application |
+| Can WireMock templating echo request fields, including optional ones? | Yes, with `{{#if request.bodyAsJson.dueDate.Value}}`; testing the JSON value itself is always false, and `JsonPath.SelectToken` fails on a missing field | Probe mappings on the `dotnet-wiremock` 2.19.0 tool |
 
 ## Appendix C Snapshot helper prototype
 The prototype used to decide on the in-house helper (chapter 13). It was tested on xunit.v3 4.0.2 with Microsoft.Testing.Platform and is the starting point for task P2-01; it is not yet in the repository.

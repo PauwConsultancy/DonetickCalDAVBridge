@@ -1,0 +1,38 @@
+{
+  "Guid": "6f1d7a52-0c4e-4b8e-9d55-2f1c3a9e0002",
+  "Title": "POST /eapi/v1/chore: echoes name, description and due date as chore 900 (Donetick answers 201)",
+  "Priority": 10,
+  "Request": {
+    "Path": {
+      "Matchers": [
+        {
+          "Name": "ExactMatcher",
+          "Pattern": "/eapi/v1/chore"
+        }
+      ]
+    },
+    "Methods": [
+      "POST"
+    ],
+    "Headers": [
+      {
+        "Name": "secretkey",
+        "Matchers": [
+          {
+            "Name": "ExactMatcher",
+            "Pattern": "test-api-key"
+          }
+        ]
+      }
+    ]
+  },
+  "Response": {
+    "StatusCode": 201,
+    "Headers": {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    "UseTransformer": true,
+    "TransformerType": "Handlebars",
+    "Body": "{\"id\":900,\"name\":\"{{request.bodyAsJson.name}}\",\"description\":{{#if request.bodyAsJson.description.Value}}\"{{request.bodyAsJson.description}}\"{{else}}null{{/if}},\"frequencyType\":\"once\",\"frequency\":0,\"frequencyMetadata\":null,\"nextDueDate\":{{#if request.bodyAsJson.dueDate.Value}}\"{{request.bodyAsJson.dueDate}}T09:00:00Z\"{{else}}null{{/if}},\"isRolling\":false,\"assignedTo\":null,\"assignees\":[],\"assignStrategy\":\"no_assignee\",\"isActive\":true,\"labelsV2\":[],\"circleId\":1,\"createdAt\":\"2025-06-15T09:00:00Z\",\"updatedAt\":\"2025-06-15T12:00:00Z\",\"createdBy\":1,\"updatedBy\":1,\"status\":0,\"priority\":0}"
+  }
+}

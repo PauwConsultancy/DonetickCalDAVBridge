@@ -176,6 +176,10 @@ or making the project accessible from the public internet by default.
   Test package versions live in `tests/Directory.Packages.props`
 - Run: `dotnet test --solution donetick_caldav.sln`; one level: `dotnet test --project <project>
   --filter-trait "Level=Integration"` (Microsoft.Testing.Platform syntax, not `--filter`)
+- Coverage: `dotnet test --solution donetick_caldav.sln --coverage --coverage-output-format cobertura
+  --coverage-settings tests/coverage/coverage.settings.xml --results-directory artifacts/test-results`, then
+  `python3 tests/coverage/coverage_report.py artifacts/test-results/*.cobertura.xml`. The gate is an 80 % floor
+  plus a ratchet on `tests/coverage/baseline.json`; raise the baseline (`--update-baseline`) when coverage rises
 - `dotnet test` must pass and compile with zero warnings before any commit
 - Production code that waits or schedules uses the registered `TimeProvider` (`Task.Delay(delay,
   timeProvider, ct)`), never a bare `Task.Delay`, so tests can control time

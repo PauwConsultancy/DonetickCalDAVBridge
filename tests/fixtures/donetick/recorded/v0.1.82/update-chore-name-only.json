@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "body": {
+    "completionActions": null,
+    "id": 5,
+    "name": "Call the dentist today",
+    "frequencyType": "once",
+    "frequency": 1,
+    "frequencyMetadata": null,
+    "nextDueDate": null,
+    "isRolling": false,
+    "assignedTo": null,
+    "assignees": [],
+    "assignStrategy": "no_assignee",
+    "isActive": true,
+    "notification": false,
+    "notificationMetadata": null,
+    "labelsV2": [],
+    "circleId": 1,
+    "createdAt": "2026-10-18T06:07:15.94132622Z",
+    "updatedAt": "2026-10-18T06:07:15.962483096Z",
+    "createdBy": 1,
+    "updatedBy": 1,
+    "thingChore": null,
+    "status": 0,
+    "priority": 0,
+    "description": "Ask about the check-up",
+    "subTasks": [],
+    "requireApproval": false,
+    "isPrivate": false,
+    "syncVersion": 8
+  }
+}

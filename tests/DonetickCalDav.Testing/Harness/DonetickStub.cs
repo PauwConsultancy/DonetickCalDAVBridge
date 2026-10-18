@@ -54,6 +54,12 @@ public sealed class DonetickStub : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Loads the reference data set (<see cref="ReferenceData"/>): six chores, and create, update,
+    /// complete and delete calls that succeed. Later calls such as <see cref="WithChores"/> replace parts of it.
+    /// </summary>
+    public DonetickStub WithReferenceData() => LoadMappings(ReferenceData.MappingsFolder);
+
     // ── Responses ───────────────────────────────────────────────────────────
 
     /// <summary><c>GET /eapi/v1/chore</c> returns these chores as a JSON array.</summary>
@@ -136,6 +142,14 @@ public sealed class DonetickStub : IDisposable
         Server.Given(Request.Create().WithPath(path).UsingMethod(method))
             .AtPriority(FaultPriority)
             .RespondWith(Response.Create().WithStatusCode(statusCode));
+        return this;
+    }
+
+    /// <summary>Removes the faults registered with <see cref="FailNext"/> and <see cref="FailAlways"/>.</summary>
+    public DonetickStub RemoveFaults()
+    {
+        foreach (var mapping in Server.Mappings.Where(m => m.Priority == FaultPriority).ToList())
+            Server.DeleteMapping(mapping.Guid);
         return this;
     }
 

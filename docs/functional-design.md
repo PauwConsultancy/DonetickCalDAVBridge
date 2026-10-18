@@ -262,7 +262,7 @@ Priority is shown, not written back.
 - `AllDayEvents=true`: DUE and DTSTART carry only the date. Calendar.app shows the task as an all-day item; Reminders shows "today" instead of "today at 10:00". This applies to all tasks, because the eAPI does not expose a per-task preference.
 
 ### BR-08 Preserve scheduled time
-With `PreserveScheduledTime=true`, the time of the due date is replaced by `frequencyMetadata.time` (HH:mm) from Donetick. When `frequencyMetadata.timezone` is a known time zone, the replacement happens in that zone and is converted back to UTC, which keeps the time correct across daylight saving changes. Without a time zone, or with an unknown one, the time is replaced in UTC. Chores without a parseable scheduled time are unchanged.
+With `PreserveScheduledTime=true`, the time of the due date is replaced by `frequencyMetadata.time` (HH:mm) from Donetick. When `frequencyMetadata.timezone` is a known time zone, the replacement happens in that zone and is converted back to UTC, which keeps the time correct across daylight saving changes. Without a time zone, or with an unknown one, the time is replaced in UTC. Chores without a parseable scheduled time are unchanged. Current Donetick versions store the scheduled time as a full timestamp, which the bridge cannot parse, so the rule has no effect with their data (finding F-23).
 
 The rule is keyed on the presence of a scheduled time, not on the chore being recurring. The option has no visible effect together with `AllDayEvents`.
 

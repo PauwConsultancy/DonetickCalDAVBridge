@@ -1,0 +1,39 @@
+{
+  "Guid": "6f1d7a52-0c4e-4b8e-9d55-2f1c3a9e0004",
+  "Title": "POST /eapi/v1/chore/{id}/complete: succeeds (the bridge reloads the list afterwards)",
+  "Priority": 10,
+  "Request": {
+    "Path": {
+      "Matchers": [
+        {
+          "Name": "RegexMatcher",
+          "Pattern": "^/eapi/v1/chore/\\d+/complete$"
+        }
+      ]
+    },
+    "Methods": [
+      "POST"
+    ],
+    "Headers": [
+      {
+        "Name": "secretkey",
+        "Matchers": [
+          {
+            "Name": "ExactMatcher",
+            "Pattern": "test-api-key"
+          }
+        ]
+      }
+    ]
+  },
+  "Response": {
+    "StatusCode": 200,
+    "Headers": {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    "BodyAsJson": {
+      "id": 0,
+      "status": 0
+    }
+  }
+}

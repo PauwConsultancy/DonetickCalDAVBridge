@@ -1,0 +1,263 @@
+{
+  "Guid": "6f1d7a52-0c4e-4b8e-9d55-2f1c3a9e0001",
+  "Title": "GET /eapi/v1/chore: the reference chores (shape recorded from Donetick v0.1.82, fixed dates)",
+  "Priority": 10,
+  "Request": {
+    "Path": {
+      "Matchers": [
+        {
+          "Name": "ExactMatcher",
+          "Pattern": "/eapi/v1/chore"
+        }
+      ]
+    },
+    "Methods": [
+      "GET"
+    ],
+    "Headers": [
+      {
+        "Name": "secretkey",
+        "Matchers": [
+          {
+            "Name": "ExactMatcher",
+            "Pattern": "test-api-key"
+          }
+        ]
+      }
+    ]
+  },
+  "Response": {
+    "StatusCode": 200,
+    "Headers": {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    "BodyAsJson": [
+      {
+        "completionActions": null,
+        "id": 101,
+        "name": "Water the plants",
+        "frequencyType": "daily",
+        "frequency": 1,
+        "frequencyMetadata": {
+          "unit": null,
+          "time": "2025-06-16T06:00:00Z",
+          "timezone": "Europe/Amsterdam",
+          "weekPattern": null
+        },
+        "nextDueDate": "2025-06-16T06:00:00Z",
+        "isRolling": false,
+        "assignedTo": null,
+        "assignees": [],
+        "assignStrategy": "no_assignee",
+        "isActive": true,
+        "notification": false,
+        "notificationMetadata": null,
+        "labelsV2": [],
+        "circleId": 1,
+        "createdAt": "2025-06-01T10:00:00Z",
+        "updatedAt": "2025-06-15T10:00:00Z",
+        "createdBy": 1,
+        "updatedBy": 1,
+        "thingChore": null,
+        "status": 0,
+        "priority": 0,
+        "requireApproval": false,
+        "isPrivate": false,
+        "syncVersion": 101
+      },
+      {
+        "completionActions": null,
+        "id": 102,
+        "name": "Pay rent",
+        "frequencyType": "day_of_the_month",
+        "frequency": 1,
+        "frequencyMetadata": {
+          "days": [
+            "1"
+          ],
+          "unit": null,
+          "time": "",
+          "timezone": "",
+          "weekPattern": null
+        },
+        "nextDueDate": "2025-07-01T06:00:00Z",
+        "isRolling": false,
+        "assignedTo": null,
+        "assignees": [],
+        "assignStrategy": "no_assignee",
+        "isActive": true,
+        "notification": false,
+        "notificationMetadata": null,
+        "labelsV2": [
+          {
+            "id": 2,
+            "name": "Finance",
+            "color": "#4A90D9",
+            "created_by": 1
+          }
+        ],
+        "circleId": 1,
+        "createdAt": "2025-06-01T10:00:00Z",
+        "updatedAt": "2025-06-15T10:00:00Z",
+        "createdBy": 1,
+        "updatedBy": 1,
+        "thingChore": null,
+        "status": 0,
+        "priority": 3,
+        "requireApproval": false,
+        "isPrivate": false,
+        "syncVersion": 102
+      },
+      {
+        "completionActions": null,
+        "id": 103,
+        "name": "Buy groceries",
+        "frequencyType": "once",
+        "frequency": 1,
+        "frequencyMetadata": null,
+        "nextDueDate": "2025-06-16T06:00:00Z",
+        "isRolling": false,
+        "assignedTo": null,
+        "assignees": [],
+        "assignStrategy": "no_assignee",
+        "isActive": true,
+        "notification": false,
+        "notificationMetadata": null,
+        "labelsV2": [
+          {
+            "id": 1,
+            "name": "Home",
+            "color": "#4A90D9",
+            "created_by": 1
+          }
+        ],
+        "circleId": 1,
+        "createdAt": "2025-06-01T10:00:00Z",
+        "updatedAt": "2025-06-15T10:00:00Z",
+        "createdBy": 1,
+        "updatedBy": 1,
+        "thingChore": null,
+        "status": 0,
+        "priority": 0,
+        "requireApproval": false,
+        "isPrivate": false,
+        "syncVersion": 103,
+        "description": "Milk, bread"
+      },
+      {
+        "completionActions": null,
+        "id": 104,
+        "name": "Clean the gutters",
+        "frequencyType": "once",
+        "frequency": 1,
+        "frequencyMetadata": null,
+        "nextDueDate": "2025-06-19T06:00:00Z",
+        "isRolling": false,
+        "assignedTo": null,
+        "assignees": [],
+        "assignStrategy": "no_assignee",
+        "isActive": true,
+        "notification": false,
+        "notificationMetadata": null,
+        "labelsV2": [
+          {
+            "id": 1,
+            "name": "Home",
+            "color": "#4A90D9",
+            "created_by": 1
+          },
+          {
+            "id": 3,
+            "name": "Outdoor",
+            "color": "#4A90D9",
+            "created_by": 1
+          }
+        ],
+        "circleId": 1,
+        "createdAt": "2025-06-01T10:00:00Z",
+        "updatedAt": "2025-06-15T10:00:00Z",
+        "createdBy": 1,
+        "updatedBy": 1,
+        "thingChore": null,
+        "status": 0,
+        "priority": 0,
+        "requireApproval": false,
+        "isPrivate": false,
+        "syncVersion": 104
+      },
+      {
+        "completionActions": null,
+        "id": 105,
+        "name": "Call the dentist",
+        "frequencyType": "once",
+        "frequency": 1,
+        "frequencyMetadata": null,
+        "nextDueDate": null,
+        "isRolling": false,
+        "assignedTo": null,
+        "assignees": [],
+        "assignStrategy": "no_assignee",
+        "isActive": true,
+        "notification": false,
+        "notificationMetadata": null,
+        "labelsV2": [],
+        "circleId": 1,
+        "createdAt": "2025-06-01T10:00:00Z",
+        "updatedAt": "2025-06-15T10:00:00Z",
+        "createdBy": 1,
+        "updatedBy": 1,
+        "thingChore": null,
+        "status": 0,
+        "priority": 0,
+        "requireApproval": false,
+        "isPrivate": false,
+        "syncVersion": 105,
+        "description": "Ask about the check-up"
+      },
+      {
+        "completionActions": null,
+        "id": 106,
+        "name": "Take out the bins",
+        "frequencyType": "days_of_the_week",
+        "frequency": 1,
+        "frequencyMetadata": {
+          "days": [
+            "monday",
+            "thursday"
+          ],
+          "unit": null,
+          "time": "",
+          "timezone": "",
+          "weekPattern": null
+        },
+        "nextDueDate": "2025-06-16T06:00:00Z",
+        "isRolling": false,
+        "assignedTo": null,
+        "assignees": [],
+        "assignStrategy": "no_assignee",
+        "isActive": true,
+        "notification": false,
+        "notificationMetadata": null,
+        "labelsV2": [
+          {
+            "id": 1,
+            "name": "Home",
+            "color": "#4A90D9",
+            "created_by": 1
+          }
+        ],
+        "circleId": 1,
+        "createdAt": "2025-06-01T10:00:00Z",
+        "updatedAt": "2025-06-15T10:00:00Z",
+        "createdBy": 1,
+        "updatedBy": 1,
+        "thingChore": null,
+        "status": 0,
+        "priority": 0,
+        "requireApproval": false,
+        "isPrivate": false,
+        "syncVersion": 106
+      }
+    ]
+  }
+}
