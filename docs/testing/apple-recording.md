@@ -32,7 +32,6 @@ Add a CalDAV account (Other, CalDAV account, manual) with server `https://<mac-h
 | RP-07 Move | Drag "Buy groceries" from Home to Finance | on |
 
 ## 3 Convert and sanitise
-
 ```bash
 python tests/fixtures/sessions/tools/capture_to_session.py rp-05.flows \
   --user recorder --id RP-05 --title "Complete a recurring task" \
@@ -49,7 +48,6 @@ Then edit the file by hand:
 3. Put useful observations in `notes`, for example "Reminders sends the completed copy first, then the original".
 
 ## 4 Run and approve
-
 ```bash
 SNAPSHOT_ACCEPT=1 dotnet test --project tests/DonetickCalDav.IntegrationTests --filter-class "*SessionReplayTests"
 ```

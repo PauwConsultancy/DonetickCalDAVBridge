@@ -9,7 +9,6 @@ The two outer automated test levels of the [testing strategy](../../docs/testing
 E2E-11 waits for the real retry delays (about a minute) and is also marked `slow`.
 
 ## Running with Docker (as CI does)
-
 ```bash
 pip install -r tests/e2e/requirements.txt
 tests/e2e/certs/generate.sh
@@ -43,7 +42,6 @@ E2E_ENV=local E2E_DONETICK_BIN=/path/to/donetick pytest tests/e2e -m contract
 | `E2E_DONETICK_BIN` | none | Local backend: the Donetick binary for the contract tests |
 
 ## Layout
-
 | File | Purpose |
 |------|---------|
 | `docker-compose.e2e.yml` | Profiles `stub` (stub, bridge, bridge with GroupByLabel), `contract` (Donetick) and `contract-bridge` |

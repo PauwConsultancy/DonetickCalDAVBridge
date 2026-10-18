@@ -2,7 +2,6 @@
 This folder holds the design documentation of the bridge, reverse engineered from the code at version 0.7.1. Start with the functional design for what the bridge does, and the technical design for how it works. The testing strategy describes how the bridge is, and will be, tested. Defects, risks and documentation drift found along the way are kept apart in the findings document, so the designs only describe the bridge as it is.
 
 ## Documents
-
 | Document | Audience | Content |
 |----------|----------|---------|
 | [functional-design.md](functional-design.md) | User, operator, reviewer | Goals, actors, use cases, functional requirements, business rules, field mapping, configuration, non-functional requirements, limitations |

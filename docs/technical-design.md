@@ -69,7 +69,6 @@ Source: [diagrams/components.puml](diagrams/components.puml)
 | `DonetickApiClient` | Typed `HttpClient` | eAPI calls, wrapped by a Polly retry pipeline |
 
 ## 3 Technology stack
-
 | Area | Choice | Version (csproj, resolved at last restore) |
 |------|--------|--------------------------------------------|
 | Runtime | .NET, `net10.0` | 10 (LTS) |
@@ -84,7 +83,6 @@ Source: [diagrams/components.puml](diagrams/components.puml)
 The application version is declared once, in `<Version>` of `DonetickCalDav.csproj`, and read at runtime from `AssemblyInformationalVersionAttribute`.
 
 ## 4 Source layout
-
 ```text
 donetick_caldav/
   Dockerfile, docker-compose.yml.example, unraid-template.xml
@@ -118,7 +116,6 @@ Source: [diagrams/domain-model.puml](diagrams/domain-model.puml)
 `VirtualCalendar` (slug, display name, colour, CTag) is not stored; `CalendarResolver` derives it from the cache on each call.
 
 ### 5.3 Tags
-
 | Tag | Scope | Computation | Changes when |
 |-----|-------|-------------|--------------|
 | ETag | One chore | First 16 hex characters of SHA-256 over `Id`, `UpdatedAt`, `Status`, `IsActive`, `Name`, `NextDueDate`, quoted | One of those fields changes |
@@ -142,7 +139,6 @@ The ETag is deterministic, so unchanged chores keep their ETag across polls and 
 9. Add `CalDavMiddleware` as the only middleware and run.
 
 ### 6.2 Service registrations
-
 | Lifetime | Types |
 |----------|-------|
 | Singleton | `ChoreCache`, `CalendarResolver`, `ClientTracker`, `StatusPageHandler` (factory, receives the version string) |
@@ -173,7 +169,6 @@ Note that the bundled `appsettings.json` provides `user` and `pass`, so the cred
 Source: [diagrams/act-request-pipeline.puml](diagrams/act-request-pipeline.puml)
 
 ### 7.2 Routing table
-
 | Path | Method | Auth | Result |
 |------|--------|------|--------|
 | `/.well-known/caldav*` | any | no | 301 to `/caldav/`, `DAV` header |
@@ -191,7 +186,6 @@ Source: [diagrams/act-request-pipeline.puml](diagrams/act-request-pipeline.puml)
 | anything else | any | no | end of pipeline, 404 |
 
 ### 7.3 Common headers
-
 | Header | When |
 |--------|------|
 | `DAV: 1, 3, access-control, calendar-access` | Every `/caldav` response including 401, and `.well-known` |
@@ -201,7 +195,6 @@ Source: [diagrams/act-request-pipeline.puml](diagrams/act-request-pipeline.puml)
 | `Location` | PUT create (201), canonical `/caldav/calendars/{user}/{slug}/donetick-{id}.ics` |
 
 ### 7.4 Status codes
-
 | Code | Meaning in this service |
 |------|-------------------------|
 | 200 | GET resource, OPTIONS, status pages |
@@ -247,7 +240,6 @@ Source: [diagrams/seq-discovery.puml](diagrams/seq-discovery.puml)
 `supported-report-set` lists `calendar-query` and `calendar-multiget` only. `calendar-order` is the 1-based position in the calendar list (default calendar first).
 
 ### 8.4 REPORT
-
 | Report | Behaviour |
 |--------|-----------|
 | `calendar-query` | Returns every chore of the calendar identified by the URL slug. Filters in the request (time range, component, status) are ignored. |
@@ -389,7 +381,6 @@ Source: [diagrams/act-calendar-assignment.puml](diagrams/act-calendar-assignment
 
 ## 13 Donetick integration
 ### 13.1 Endpoints used
-
 | Operation | Request | Response handling |
 |-----------|---------|-------------------|
 | List chores | `GET /eapi/v1/chore` | JSON array, or object `{"res": [...]}`; anything else throws `JsonException` |
@@ -401,7 +392,6 @@ Source: [diagrams/act-calendar-assignment.puml](diagrams/act-calendar-assignment
 Every call uses `EnsureSuccessStatusCode()`, so non-2xx responses surface as `HttpRequestException`. Authentication is the `secretkey` default request header. The eAPI offers no label, priority or recurrence management; this is the root of most functional limitations.
 
 ### 13.2 Resilience
-
 | Setting | Value |
 |---------|-------|
 | Strategy | Polly retry via `AddResilienceHandler("donetick")` |
@@ -448,7 +438,6 @@ Source: [diagrams/deployment.puml](diagrams/deployment.puml)
 Multi-stage `Dockerfile`: the SDK stage copies `src/DonetickCalDav/` and runs `dotnet publish -c Release`; the runtime stage copies the output into `aspnet:10.0`, exposes 5232 and starts `dotnet DonetickCalDav.dll`. There is no `USER` instruction (the process runs as root) and no `HEALTHCHECK`. Tests are not run during the image build.
 
 ### 15.3 Deployment options
-
 | Option | Files | Notes |
 |--------|-------|-------|
 | Docker Compose | `docker-compose.yml.example` | Builds locally, maps 5232, log rotation 3 x 10 MB, `restart: unless-stopped` |
@@ -478,29 +467,35 @@ Three projects under `tests/`, all on xUnit v3 and Microsoft.Testing.Platform (o
 
 Approved snapshots live in `Snapshots/` folders next to their test classes: the ICS matrix (SN-01) in the unit project, HTTP responses (SN-02 to SN-05) and replay transcripts (L3) in the integration project. Replay sessions and Donetick fixtures are under `tests/fixtures`.
 
-The table lists the unit test classes.
+Unit test classes (`DonetickCalDav.Tests`):
 
 | Area | Test class | Test methods |
 |------|------------|--------------|
 | VTODO mapping | `VTodoMapperTests` | 38 |
+| ICS snapshot matrix (SN-01) | `VTodoSnapshotTests` | 1 theory, 48 cases |
 | Virtual calendars | `CalendarResolverTests` | 24 |
 | Cache | `ChoreCacheTests` | 20 |
-| Client tracking | `ClientTrackerTests` | 13 |
+| Client tracking | `ClientTrackerTests` | 15 |
+| Snapshot helper | `SnapshotHelperTests` | 12 |
+| XML reader | `DavXmlReaderTests` | 12 |
 | Path parsing | `PathHelperTests` | 11 |
 | Status mapping | `StatusMapperTests` | 10 |
 | PUT handler | `PutHandlerTests` | 10 |
-| XML reader | `DavXmlReaderTests` | 9 |
 | XML writer | `DavXmlWriterTests` | 9 |
 | Donetick client | `DonetickApiClientTests` | 6 |
+| Recorded Donetick payloads (U-01) | `RecordedPayloadTests` | 6 |
+| Property-based tests (U-02) | `PropertyTests` | 6 |
 | Priority mapping | `PriorityMapperTests` | 5 |
+| Background sync timing | `ChoreSyncServiceTests` | 4 |
 | GET handler | `GetHandlerTests` | 4 |
 | DELETE handler | `DeleteHandlerTests` | 3 |
-| Background sync timing | `ChoreSyncServiceTests` | 4 |
 
-The counts are `[Fact]` and `[Theory]` attributes (166 in total); theories run more cases. Helpers: `TestChoreFactory` (named chore scenarios on a fixed base date, in `DonetickCalDav.Testing`) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
+The counts are `[Fact]`, `[Theory]` and `[Property]` attributes (196 in total); theories run more cases. Helpers: `TestChoreFactory` and `ChoreMatrix` (in `DonetickCalDav.Testing`) and `HttpContextHelper` (a `DefaultHttpContext` with readable response body).
+
+The integration project has one class per scenario of the testing strategy (IT-01 to IT-16, 91 test methods), plus `WireFormatSnapshotTests` (SN-02 to SN-05), `SessionReplayTests` (L3) and `MappingFileTests`. The container end-to-end (L4) and contract tests (L5) are Python in `tests/e2e`. Altogether about 450 .NET test cases run in under 15 seconds.
 
 ### 16.2 Coverage gaps
-The integration tests (scenarios IT-01 to IT-16 of the [testing strategy](testing-strategy.md)) cover the request pipeline, authentication, PROPFIND, REPORT, PROPPATCH, the status endpoints, the sync service and the startup validation. Together with the unit tests they cover 91.5 % of the hand-written lines; the least covered files are `Program.cs` (TLS certificate loading, 74 %) and `ClientTracker` (pruning, 74 %). Open findings are pinned by characterization tests with the trait `KnownIssue`. Container tests and contract tests against a real Donetick follow the roadmap.
+The integration tests (scenarios IT-01 to IT-16 of the [testing strategy](testing-strategy.md)) cover the request pipeline, authentication, PROPFIND, REPORT, PROPPATCH, the status endpoints, the sync service and the startup validation. Together with the unit tests they cover 93.9 % of the hand-written lines (Release build, as the CI gate measures); the least covered files are `Program.cs` (TLS certificate loading, 77 %), which the container tests cover instead, and `StatusPageHandler` (85 %). Open findings are pinned by characterization tests with the trait `KnownIssue`. The container end-to-end tests and the contract tests against a real Donetick are in `tests/e2e`; mutation testing of the core logic in `tests/mutation` (baseline 67.3 %, with `CalendarResolver`'s colour arithmetic as the weakest spot).
 
 `VTodoMapperTests.ToIcsString_ConcurrentCalls_DoNotThrow` serialises 20,000 chores in parallel and fails if a shared serializer is reintroduced.
 

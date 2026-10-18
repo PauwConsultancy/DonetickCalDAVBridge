@@ -23,7 +23,6 @@ This document describes what the bridge does from the user's and operator's poin
 The behaviour was derived from the code in `src/DonetickCalDav` and the unit tests in `tests/DonetickCalDav.Tests`. Statements that depend on Donetick or Apple behaviour and cannot be confirmed from this codebase are marked **Assumption**.
 
 ### 1.3 Related documents
-
 | Document | Content |
 |----------|---------|
 | [technical-design.md](technical-design.md) | Architecture, components, protocols, caching, deployment |
@@ -37,7 +36,6 @@ The behaviour was derived from the code in `src/DonetickCalDav` and the unit tes
 Donetick supports recurrence based on the completion date (a chore done late moves its next occurrence accordingly) and rewards completions with points. The owner, however, plans their day in the calendar and reminders apps and expects to stop using Donetick if it requires opening a separate app. The bridge brings Donetick chores into those apps without giving up Donetick's recurrence and points.
 
 ### 2.2 Goals
-
 | ID | Goal |
 |----|------|
 | G1 | Donetick chores are visible in Apple Reminders, and those with a due date also in Calendar.app |
@@ -53,7 +51,6 @@ Donetick supports recurrence based on the completion date (a chore done late mov
 - Running exposed to the public internet; the README recommends a private network such as Tailscale
 
 ## 3 Actors
-
 | Actor | Type | Description |
 |-------|------|-------------|
 | Task owner | Person | The single Donetick user who works with tasks in a CalDAV client |
@@ -233,7 +230,6 @@ The list address is derived from the label name: accents removed, lower case, sp
 The single list (GroupByLabel off) and the default list use `CalendarColor`. A label list gets a colour derived from the label name: a hue from a SHA-256 hash, with 55 % saturation and 50 % lightness. The same label always gets the same colour.
 
 ### BR-04 Status shown in the client
-
 | Donetick | VTODO STATUS |
 |----------|--------------|
 | `isActive = false` (any status) | CANCELLED |
@@ -342,7 +338,6 @@ Settings are read from environment variables, where a double underscore separate
 The defaults `user` and `pass` pass validation. Operators must override them; nothing in the code enforces this.
 
 ## 10 Non-functional requirements
-
 | ID | Category | Requirement | How it is met |
 |----|----------|-------------|---------------|
 | NFR-01 | Security | Only the configured user can read or change tasks | HTTP Basic on all CalDAV requests except discovery and OPTIONS; constant-time credential comparison |
@@ -382,7 +377,6 @@ The limitations below follow from what the Donetick eAPI supports, from how Appl
 | L-13 | Labels that produce the same slug share one list; a label whose slug is `tasks` merges into the default list (BR-02) | Unexpected grouping |
 
 ## 12 Glossary
-
 | Term | Meaning |
 |------|---------|
 | Chore | A Donetick task; the only business entity |

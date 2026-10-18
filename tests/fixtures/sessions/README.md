@@ -2,7 +2,6 @@
 Client sessions for the L3 replay tests (testing strategy, 5.4). `SessionReplayTests` replays every file below this folder through the integration harness, against the reference data in `../donetick/mappings`, and checks three things: each request gets the status the client got when the session was recorded, the Donetick calls match `expectDonetick`, and the full transcript of responses matches an approved snapshot in `tests/DonetickCalDav.IntegrationTests/Replay/Snapshots`.
 
 ## Folders
-
 | Folder | Source | Content |
 |--------|--------|---------|
 | `apple-reminders-macos-synthetic/` | Synthetic | RP-01 to RP-07, written by hand from the request patterns Apple Reminders is known to use. Not captured from a device |
@@ -11,7 +10,6 @@ Client sessions for the L3 replay tests (testing strategy, 5.4). `SessionReplayT
 Recorded Apple sessions go into folders named after the client, for example `apple-reminders-macos/` or `apple-ios/`, made with the [recording guide](../../../docs/testing/apple-recording.md). A synthetic session stays until a recording covers the same scenario.
 
 ## Format
-
 ```json
 {
   "id": "RP-05",

@@ -193,7 +193,9 @@ or making the project accessible from the public internet by default.
 - Integration tests are no longer "intentionally minimal": the Ical.Net 5 upgrade showed that
   wiring, wire-format and concurrency defects slip past unit tests and manual checks
 - Approved test dependencies (no need to ask again): xunit.v3, Microsoft.AspNetCore.Mvc.Testing,
-  WireMock.Net, Microsoft.Extensions.TimeProvider.Testing
+  WireMock.Net, Microsoft.Extensions.TimeProvider.Testing, Microsoft.Testing.Extensions.CodeCoverage,
+  FsCheck.Xunit.v3; tools: dotnet-stryker, dotnet-wiremock; Python test runner: caldav, pytest, requests
+- Mutation testing (weekly in CI): `cd tests/mutation && dotnet stryker --config-file stryker-config.json`
 - Snapshot tests use a small in-house helper (`tests/DonetickCalDav.Testing/Snapshots`), not a library.
   Verify was rejected because of its maintenance fee for revenue-generating use (strategy chapter 13);
   do not add a snapshot library without revisiting that decision

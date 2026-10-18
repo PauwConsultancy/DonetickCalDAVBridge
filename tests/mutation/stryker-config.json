@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "DonetickCalDav.csproj",
+    "test-projects": [
+      "../DonetickCalDav.Tests/DonetickCalDav.Tests.csproj"
+    ],
+    "solution": "../../donetick_caldav.sln",
+    "mutate": [
+      "**/CalDav/VTodo/*.cs",
+      "**/CalDav/Handlers/CalendarResolver.cs",
+      "**/CalDav/Handlers/PathHelper.cs",
+      "**/Cache/ChoreCache.cs"
+    ],
+    "reporters": [
+      "progress",
+      "html",
+      "json",
+      "markdown"
+    ],
+    "thresholds": {
+      "high": 85,
+      "low": 70,
+      "break": 60
+    },
+    "concurrency": 2,
+    "additional-timeout": 10000,
+    "test-runner": "mtp"
+  }
+}

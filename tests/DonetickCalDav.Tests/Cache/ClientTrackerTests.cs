@@ -181,4 +181,31 @@ public class ClientTrackerTests
         // Most recent (curl) should be first
         clients[0].DisplayName.Should().Be("curl");
     }
+
+    // ── Pruning (U-04) ──────────────────────────────────────────────────────
+
+    [Fact]
+    [Trait("Scenario", "U-04")]
+    public void RecordRequest_MoreThanOneHundredClients_KeepsOneHundred()
+    {
+        var tracker = new ClientTracker();
+
+        for (var i = 0; i < 150; i++)
+            tracker.RecordRequest($"TestClient/{i} (unique-{i})", "PROPFIND");
+
+        tracker.GetActiveClients(TimeSpan.FromHours(1)).Should().HaveCount(100);
+    }
+
+    [Fact]
+    [Trait("Scenario", "U-04")]
+    [Trait("KnownIssue", "F-17")]
+    public void TotalRequests_AfterPruning_LosesThePrunedClientsRequests()
+    {
+        var tracker = new ClientTracker();
+
+        for (var i = 0; i < 101; i++)
+            tracker.RecordRequest($"TestClient/{i} (unique-{i})", "PROPFIND");
+
+        tracker.TotalRequests.Should().Be(100, "101 requests were made, but the pruned client no longer counts");
+    }
 }

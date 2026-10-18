@@ -1,5 +1,5 @@
 # Donetick CalDAV Bridge - Testing Strategy
-Status: accepted on 2026-10-17, snapshot library decided on 2026-10-18; implementation in progress, see the status column in chapter 12. Applies to the code after the Ical.Net 5 upgrade (commit `0209644`).
+Status: accepted on 2026-10-17, snapshot library decided on 2026-10-18; implemented on 2026-10-18 (phases 0 to 5, status per phase in chapter 12). Applies to the code after the Ical.Net 5 upgrade (commit `0209644`).
 
 ## Summary
 The bridge has a solid unit test suite (210 tests) but nothing that exercises the application as a whole. Measured line coverage of hand-written code is 44 %; the request pipeline, authentication, PROPFIND, REPORT, the sync service and the startup code have no coverage at all. The Ical.Net 5 upgrade showed what that costs: a changed `DTSTART` value type and a concurrency defect only surfaced through ad-hoc output comparison and stress runs.
@@ -16,7 +16,14 @@ The project is deliberately used as a reference case for practices that are mean
 
 The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use a small in-house helper of about 75 lines (prototype in appendix C) instead of a library: Verify now carries a maintenance fee for revenue-generating use, and the free alternatives are less complete (chapter 13).
 
-Next step: phase 5 (extras); phases 0 to 4 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
+Implementation result (2026-10-18): about 450 .NET test cases and 24 Python end-to-end and contract tests; line coverage of hand-written code rose from 46.7 % to 93.9 % (Release build). Building the pipeline surfaced eight new findings (F-23 to F-30), among them a response parser that empties the cache on an unexpected JSON object and a Preserve Scheduled Time option that does not work with current Donetick data.
+
+Open items, all outside what can be done from the repository alone:
+
+- Record real Apple sessions ([testing/apple-recording.md](testing/apple-recording.md)); RP-01 to RP-07 are synthetic until then.
+- Let the container workflows run once in GitHub Actions: the L4 and L5 suites passed against local processes, but no container registry was reachable while building them.
+- Make the CI checks required for `main` in the repository's branch protection.
+- Optional and not built: the NBomber load test, the OWASP ZAP scan and the synthetic PROPFIND production check (5.8, 5.9).
 
 ## 1 Purpose and scope
 This document defines how the bridge is tested: which risks matter, which test levels address them, the tools, test data, conventions, the CI pipeline with its quality gates, and a phased roadmap.
@@ -24,7 +31,6 @@ This document defines how the bridge is tested: which risks matter, which test l
 It complements the [functional design](functional-design.md) (what to verify), the [technical design](technical-design.md) (what is built) and [findings.md](findings.md) (known defects, several of which become tests here). `instructions.md` refers to this document for the testing approach.
 
 ## 2 Current state
-
 | Area | Tests today | Line coverage |
 |------|-------------|---------------|
 | VTODO mapping (`VTodoMapper`, `StatusMapper`, `PriorityMapper`) | Unit, thorough | 100 % |
@@ -41,7 +47,7 @@ It complements the [functional design](functional-design.md) (what to verify), t
 
 Totals for hand-written code: 946 of 2,132 lines (44.4 %) and 308 of 779 branches (39.5 %), measured with coverlet on 2026-10-17. There is no CI; tests run when someone remembers.
 
-After phase 1 (2026-10-18), measured with Microsoft.Testing.Extensions.CodeCoverage on a Debug build, which counts lines differently: the unit tests alone cover 46.7 % of 1,658 lines, the integration tests alone 86.2 %, together 91.5 % of lines and 78.1 % of branches. The CI gate measures the Release build: 93.0 % of 1,392 lines and 82.8 % of branches after phase 2. `tests/coverage/coverage_report.py` produces the per-file table.
+After phase 1 (2026-10-18), measured with Microsoft.Testing.Extensions.CodeCoverage on a Debug build, which counts lines differently: the unit tests alone cover 46.7 % of 1,658 lines, the integration tests alone 86.2 %, together 91.5 % of lines and 78.1 % of branches. The CI gate measures the Release build: 93.0 % of 1,392 lines and 82.8 % of branches after phase 2, 93.9 % and 84.5 % after phase 5. `tests/coverage/coverage_report.py` produces the per-file table.
 
 Lessons from the Ical.Net 5 upgrade, each mapped to the layer that would have caught it:
 
@@ -63,7 +69,6 @@ Lessons from the Ical.Net 5 upgrade, each mapped to the layer that would have ca
 8. **Tests are traceable.** Each test names the use case, business rule or finding it covers (chapter 11).
 
 ## 4 Risk analysis
-
 | ID | Risk | Impact | Likelihood | Addressed by |
 |----|------|--------|------------|--------------|
 | R1 | A change in the ICS or XML output breaks already-synced Apple clients | High | Medium | L1b snapshot, L3 replay, L6 acceptance |
@@ -103,6 +108,8 @@ The existing suite stays the base and keeps its conventions (`MethodName_Scenari
 | U-04 | `ClientTracker` pruning at the 100-entry cap | Untested branch |
 
 Handlers that mostly assemble XML (`PropFindHandler`, `ReportHandler`) are tested at L2 rather than with unit tests, because their value lies in the request-to-response mapping.
+
+Implementation (phase 5): U-01 is `RecordedPayloadTests` on the v0.1.82 recordings (the `{"res": [...]}` shape turned out to parse as an empty list, finding F-26); U-02 is `PropertyTests` with FsCheck.Xunit.v3, which found that a scheduled time in the daylight-saving gap throws (finding F-30); U-03 and U-04 extend `DavXmlReaderTests` and `ClientTrackerTests`.
 
 ### 5.2 L1b Snapshot tests
 Snapshot tests store the output once as an approved file and fail on any difference. The developer then either fixes the code or approves the new output, which makes every change to the wire format a visible, reviewed decision. This directly supports the stop condition in `instructions.md` about not altering the VTODO shape unintentionally.
@@ -262,14 +269,13 @@ Consumer-driven contract tools such as Pact were considered. They need the provi
 A short checklist, run before each release on macOS and once on iOS: [testing/apple-acceptance.md](testing/apple-acceptance.md). Results are noted in the release entry of `CHANGELOG.md`. Reminders supports AppleScript, so the create, edit, complete and delete checks can be scripted on the Mac. Because the moment Apple syncs is not deterministic, such a script assists the manual check rather than replacing it.
 
 ### 5.8 Non-functional testing
-
 | Area | Approach | When |
 |------|----------|------|
 | Security | Auth matrix in IT-02; `dotnet list package --vulnerable` in CI; image scan (for example Trivy); secret scanning (for example gitleaks) as a pre-commit hook, since the local `docker-compose.yml` holds a real API key | Every push and on main |
 | Security, optional | OWASP ZAP baseline scan against the L4 container | Before release |
 | Resilience | IT-12, IT-13 and E2E-11 | As per level |
 | Performance, optional | NBomber scenario: 5 clients polling PROPFIND and REPORT every 15 s against 500 chores; initial target p95 below 100 ms with zero errors, to be calibrated after a first run | On demand |
-| Test quality | Mutation testing with Stryker.NET on `CalDav/VTodo`, `CalendarResolver`, `PathHelper` and `ChoreCache`; initial target score set after the first run | Weekly |
+| Test quality | Mutation testing with Stryker.NET on `CalDav/VTodo`, `CalendarResolver`, `PathHelper` and `ChoreCache`. Baseline on 2026-10-18: 67.3 %, with the mappers above 90 % and `CalendarResolver` at 42 % because colour values are not asserted in unit tests; break threshold 60 % (`tests/mutation`) | Weekly |
 
 ### 5.9 Production checks
 `/health/json` is designed for a monitor such as Uptime Kuma, but it only shows that the process runs and the cache is filled. A synthetic check adds an authenticated `PROPFIND` on the default calendar and looks for `getctag` in the response, for example a scheduled `curl` that reports to an Uptime Kuma push monitor. That proves authentication, routing and the cache work in the deployed instance.
@@ -282,7 +288,6 @@ A short checklist, run before each release on macOS and once on iOS: [testing/ap
 - **No personal data:** fixtures never contain real chore names, labels or credentials from the production Donetick.
 
 ## 7 Test doubles
-
 | Double | Replaces | Levels | Notes |
 |--------|----------|--------|-------|
 | NSubstitute mock of `IDonetickApiClient` | Donetick client | L1 | Existing |
@@ -294,7 +299,6 @@ A short checklist, run before each release on macOS and once on iOS: [testing/ap
 | Real Donetick container | nothing | L5 | Pinned version |
 
 ## 8 Project structure and conventions
-
 ```text
 global.json                           opts dotnet test into Microsoft.Testing.Platform
 tests/
@@ -379,7 +383,7 @@ Coverage targets by area, as a check that every part of the code is exercised at
 | Every business rule | At least one L1 or L1b test |
 
 ## 11 Traceability
-Use cases from the functional design mapped to tests. Unit test classes exist today; the other IDs are planned.
+Use cases from the functional design mapped to tests. Every ID exists as a test (the RP sessions as synthetic sessions until recorded); the `Scenario` and `Covers` traits select them, for example `dotnet test --project tests/DonetickCalDav.IntegrationTests --filter-trait "Covers=UC-05"`.
 
 | Use case | L1 / L1b | L2 / L3 | L4 / L5 | L6 |
 |----------|----------|---------|---------|----|
@@ -399,7 +403,6 @@ Use cases from the functional design mapped to tests. Unit test classes exist to
 With the `Covers` trait in place, this table can be generated from the test assemblies instead of maintained by hand.
 
 ## 12 Roadmap
-
 | Phase | Deliverables | Done when | Status |
 |-------|--------------|-----------|--------|
 | 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test | Done 2026-10-18 |
@@ -407,7 +410,7 @@ With the `Covers` trait in place, this table can be generated from the test asse
 | 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green | Done 2026-10-18, with synthetic RP sessions until recordings exist |
 | 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` | Done 2026-10-18; making it required is a GitHub setting |
 | 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented | Done 2026-10-18 with the local backend; first container run in CI |
-| 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded | Open |
+| 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded | Done 2026-10-18 for U-01 to U-04 and mutation testing; the optional items are not built |
 
 ## 13 Decisions
 Decided on 2026-10-17; the snapshot library on 2026-10-18.
@@ -422,6 +425,7 @@ Decided on 2026-10-17; the snapshot library on 2026-10-18.
 | Coverage gate | Ratchet plus an 80 % floor after phase 1 |
 | `instructions.md` | Testing section updated to refer to this strategy |
 | Snapshot library | No library: an in-house snapshot helper; see below |
+| Optional tools (phase 5) | FsCheck.Xunit.v3 3.4.0 for property-based tests and Stryker.NET 5.0.0 for weekly mutation testing are in use; NBomber and OWASP ZAP stay optional and are not set up |
 
 Verify was the intended snapshot library. Since version 33 its build fails unless the project declares a sponsorship or an exemption (error SC021), and every Verify version released after 1 September 2026 falls under its maintenance fee. The fee applies to organisations with at least US$10,000 annual revenue that use the packages in revenue-generating work, starting at US$5 per month for fewer than 40 employees; open source projects without revenue are exempt.
 

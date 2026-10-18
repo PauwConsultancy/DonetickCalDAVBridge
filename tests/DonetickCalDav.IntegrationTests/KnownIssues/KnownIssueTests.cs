@@ -171,6 +171,27 @@ public class KnownIssueTests(DonetickStub donetick) : IntegrationTest(donetick)
         Ics.Line(response.Body, "DUE").Should().Be("DUE:20250616T174500Z");
     }
 
+    [Fact(Timeout = DefaultTimeout)]
+    [Trait("KnownIssue", "F-30")]
+    public async Task PreserveScheduledTime_ScheduledTimeInTheSpringForwardGap_BreaksEveryRequestForTheChore()
+    {
+        // Only reachable with HH:mm metadata today (finding F-23 blocks RFC3339 values); fixing F-23
+        // without F-30 would expose it for every chore scheduled in the skipped hour.
+        var chore = TestChoreFactory.DailyRecurring(3);
+        chore.NextDueDate = new DateTime(2025, 3, 30, 17, 45, 0, DateTimeKind.Utc);
+        chore.FrequencyMetadata = new() { Time = "02:30", Timezone = "Europe/Amsterdam" };
+        Donetick.WithChores(chore, TestChoreFactory.Simple(1));
+        var bridge = await StartBridgeAsync(o => o.PreserveScheduledTime = true);
+        var client = bridge.CreateClient();
+
+        var get = () => client.GetAsync(bridge.ResourcePath(3));
+        var report = () => client.ReportAsync(bridge.CalendarPath(), Dav.CalendarQuery());
+
+        // TestServer surfaces the exception; Kestrel answers 500. The REPORT fails for the whole list.
+        await get.Should().ThrowAsync<ArgumentException>();
+        await report.Should().ThrowAsync<ArgumentException>();
+    }
+
     private sealed class UnseekableStream(byte[] data) : MemoryStream(data)
     {
         public override bool CanSeek => false;

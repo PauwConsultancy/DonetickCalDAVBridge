@@ -17,5 +17,6 @@
     <PackageVersion Include="WireMock.Net" Version="2.19.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
+    <PackageVersion Include="FsCheck.Xunit.v3" Version="3.4.0" />
   </ItemGroup>
 </Project>

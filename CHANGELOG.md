@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replay tests (L3): client sessions under `tests/fixtures/sessions` replayed through the integration harness; synthetic Apple Reminders sessions RP-01 to RP-07, a recorded session of the Python `caldav` client, a capture converter and a recording guide (`docs/testing/apple-recording.md`)
 - GitHub Actions CI (`.github/workflows/ci.yml`): Release build with warnings as errors, all tests with coverage gate and JUnit summary, vulnerable-package check, and on `main` and tags an image build with a Trivy scan
 - Container end-to-end tests (L4, E2E-01 to E2E-11) and contract tests against a real Donetick (L5, CT-01 to CT-09) in `tests/e2e`: pytest with the Python `caldav` client, Docker Compose with a WireMock stub and Donetick built from its release binary, automatic provisioning, and a local backend for machines without Docker; nightly and weekly workflows
+- Unit tests on payloads recorded from a real Donetick (U-01), property-based tests with FsCheck (U-02), request-body edge cases (U-03), client-tracker pruning (U-04), and a mutation-testing baseline with Stryker.NET (`tests/mutation`, weekly workflow)
 
 ### Changed
 - Ical.Net 4.3.1 to 5.2.3 (v4 is out of support); code migrated to the v5 API
@@ -33,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `docs/` with a functional design, a technical design, a findings report and PlantUML diagrams (sources and rendered SVGs), reverse engineered from 0.7.1
 - README: link to the design documentation
 - Added a testing strategy (`docs/testing-strategy.md`) and an Apple acceptance checklist (`docs/testing/apple-acceptance.md`)
-- Findings F-23 to F-29 from the integration tests and a real Donetick: Preserve Scheduled Time cannot parse Donetick's timestamp format, a JSON object without `Res` empties the cache, timestamps outside UTC, DELETE of an already deleted chore, malformed base URL message, chunked PUT over 1 MB, unescaped backslashes in ICS text
+- Findings F-23 to F-30 from the integration tests and a real Donetick: Preserve Scheduled Time cannot parse Donetick's timestamp format, a JSON object without `Res` empties the cache, timestamps outside UTC, DELETE of an already deleted chore, malformed base URL message, chunked PUT over 1 MB, unescaped backslashes in ICS text, scheduled times in the daylight-saving gap
 
 ## [0.7.1] — 2026-04-20
 

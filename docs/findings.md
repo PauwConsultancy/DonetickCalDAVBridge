@@ -1,5 +1,5 @@
 # Donetick CalDAV Bridge - Findings
-Review of version 0.7.1, based on the reverse engineering for the [functional design](functional-design.md) and [technical design](technical-design.md) on 2026-10-17, extended on 2026-10-18 with what the new integration tests and a real Donetick v0.1.82 revealed (F-23 to F-29). Those documents describe the bridge as it is; this document evaluates it: defects, risks, improvement proposals and project documentation that no longer matches the code.
+Review of version 0.7.1, based on the reverse engineering for the [functional design](functional-design.md) and [technical design](technical-design.md) on 2026-10-17, extended on 2026-10-18 with what the new integration tests and a real Donetick v0.1.82 revealed (F-23 to F-30). Those documents describe the bridge as it is; this document evaluates it: defects, risks, improvement proposals and project documentation that no longer matches the code.
 
 ## Summary
 The design fits its stated scope (one user, a few devices, private network), and the riskiest logic, the VTODO mapping, is well covered by unit tests. The issues worth addressing first, in order of impact:
@@ -14,7 +14,7 @@ The design fits its stated scope (one user, a few devices, private network), and
 Eight places in the existing project documentation and code comments no longer match the code (chapter 4).
 
 ## 1 Scope and method
-F-01 to F-22 come from reading the code, tests, Dockerfile, templates and project notes. F-23 to F-29 were found while building the test pipeline: by the in-process integration tests, by running the published application, and by calling a real Donetick v0.1.82 (testing strategy, 5.6). Nothing was verified with an Apple client. Findings that depend on unverified Donetick behaviour are marked **Assumption**.
+F-01 to F-22 come from reading the code, tests, Dockerfile, templates and project notes. F-23 to F-30 were found while building the test pipeline: by the in-process integration tests, snapshot and property-based tests, by running the published application, and by calling a real Donetick v0.1.82 (testing strategy, 5.6). Nothing was verified with an Apple client. Findings that depend on unverified Donetick behaviour are marked **Assumption**.
 
 Open findings that can be reproduced automatically have a characterization test: a test that asserts today's behaviour and carries the trait `KnownIssue` with the finding's ID. `dotnet test --project tests/DonetickCalDav.IntegrationTests --filter-trait "KnownIssue=F-01"` runs the tests for one finding. When a finding is fixed, its test fails; it is then inverted into a regression test and the trait removed.
 
@@ -30,7 +30,6 @@ Severity reflects the impact for the intended single-user, private-network use:
 When a finding is resolved, remove its row and mention the fix in `CHANGELOG.md`. Findings that will be picked up can be moved to `backlog.md`.
 
 ## 2 Behaviour and robustness
-
 | ID | Severity | Finding | Suggested direction |
 |----|----------|---------|---------------------|
 | F-01 | High | `PutHandler.HandleUpdate` completes the chore, then reloads all chores in the same `try`. If the reload fails, the client gets 502 although the completion succeeded, and a client retry completes the chore again. A `JsonException` from the reload is not caught at all and becomes a 500. | Treat the reload as best effort: catch its failure, invalidate the entry or trigger a background sync, and still return 204. |
@@ -53,13 +52,13 @@ When a finding is resolved, remove its row and mention the fix in `CHANGELOG.md`
 | F-25 | Low | DELETE of a chore that Donetick no longer knows returns 502, because Donetick answers 404 and any non-success status becomes an `HttpRequestException`. A client that retries a delete after a lost response sees an error. | Treat a Donetick 404 on DELETE as success (204), or answer 404. |
 | F-28 | Low | A PUT without `Content-Length` (chunked) larger than 1 MB fails with 500 instead of 413: `StreamReader.Peek()` reads synchronously, which Kestrel forbids. Confirmed against the published application. | Read one more character with `ReadAsync` instead of calling `Peek()`. |
 | F-29 | Low | Backslashes in chore names and descriptions are not escaped in the ICS output (RFC 5545 requires `\\`). A name such as `C:\temp` is invalid ICS, and a name containing `\n` turns into a line break in the client. Ical.Net behaves this way in both 4.3.1 and 5.2.3, so it is not a regression of the upgrade. Pinned by the SN-01 snapshot `special-characters`. | Escape backslashes before handing text to Ical.Net, and add a round-trip unit test. |
+| F-30 | Low | `AdjustToScheduledTime` builds the scheduled local time and converts it with `TimeZoneInfo.ConvertTimeToUtc`, which throws for a time that does not exist (the hour skipped at the start of daylight saving time, for example 02:30 in Amsterdam on 30 March 2025). The exception escapes from `ToIcsString`, so every GET, PROPFIND and REPORT that includes the chore fails with 500 on that day. Today only scheduled times in `HH:mm` form reach this code (finding F-23); fixing F-23 alone would expose it for every chore scheduled in the skipped hour. Found by a property-based test. | Check `TimeZoneInfo.IsInvalidTime` and move the time forward by the gap (as clocks do), and fix it together with F-23. |
 | F-15 | Info | The UID map grows by one entry per created task for the lifetime of the process. | Acceptable; optionally prune entries older than a day. |
 | F-16 | Info | Two full loads run back to back at startup (startup check, then the first loop iteration). | Delay the first loop iteration by one interval. |
 | F-17 | Info | `ClientTracker.TotalRequests` sums only retained clients, so pruned clients disappear from the total. | Keep a separate counter. |
 | F-22 | Info | Polly logs every Donetick call at Information ("Execution attempt"), so each poll adds a log line (about 2,900 a day at the default interval). | Add `builder.Logging.AddFilter("Polly", LogLevel.Warning)` next to the existing HttpClient filter. |
 
 ## 3 Build and deployment
-
 | ID | Severity | Finding | Suggested direction |
 |----|----------|---------|---------------------|
 | F-18 | Low | The container runs as root and has no `HEALTHCHECK`; the `aspnet` image contains no curl or wget for a shell-based check. | Add `USER app` (the non-root user shipped in .NET 8 and later images; port 5232 needs no privileges) and a `HEALTHCHECK` on `/health/json`, which requires adding a small probe tool to the image. |

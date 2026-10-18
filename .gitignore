@@ -45,3 +45,6 @@ docker-compose.yml
 
 ## End-to-end test certificates (tests/e2e/certs/generate.sh)
 tests/e2e/certs/out/
+
+## Unapproved snapshot output (the snapshot helper writes these on a mismatch)
+*.received.*

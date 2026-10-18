@@ -8,7 +8,6 @@ Manual check (test level L6 in the [testing strategy](../testing-strategy.md)) b
 - Debug logging on (`Logging__LogLevel__DonetickCalDav=Debug`) so failed checks can be traced.
 
 ## Checks
-
 | ID | Check | Steps | Expected result |
 |----|-------|-------|-----------------|
 | AT-01 | Add account | System Settings, Internet Accounts, Add Account, Other, CalDAV, Manual; server URL, username, password; enable Reminders and Calendars | Account is added without certificate or authentication warnings |

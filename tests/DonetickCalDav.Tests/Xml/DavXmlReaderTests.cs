@@ -155,4 +155,52 @@ public class DavXmlReaderTests
         DavXmlReader.IsCalendarMultiget(xml).Should().BeFalse();
         DavXmlReader.IsSyncCollection(xml).Should().BeFalse();
     }
+
+    // ── ReadRequestBodyAsync (U-03) ─────────────────────────────────────────
+
+    [Fact]
+    [Trait("Scenario", "U-03")]
+    public async Task ReadRequestBodyAsync_XmlWithContentLength_ReturnsTheDocument()
+    {
+        var context = Request("<d:propfind xmlns:d=\"DAV:\"><d:allprop/></d:propfind>");
+
+        var document = await DavXmlReader.ReadRequestBodyAsync(context);
+
+        document!.Root!.Name.Should().Be(DavNamespaces.D + "propfind");
+    }
+
+    [Theory]
+    [Trait("Scenario", "U-03")]
+    [InlineData("")]
+    [InlineData("   \n  ")]
+    [InlineData("<d:propfind xmlns:d=\"DAV:\">")]
+    [InlineData("not xml at all")]
+    public async Task ReadRequestBodyAsync_EmptyBlankOrInvalidBody_ReturnsNull(string body)
+    {
+        var document = await DavXmlReader.ReadRequestBodyAsync(Request(body));
+
+        document.Should().BeNull();
+    }
+
+    [Fact]
+    [Trait("Scenario", "U-03")]
+    [Trait("KnownIssue", "F-07")]
+    public async Task ReadRequestBodyAsync_BodyWithoutContentLength_IsIgnored()
+    {
+        var context = Request("<d:propfind xmlns:d=\"DAV:\"><d:allprop/></d:propfind>");
+        context.Request.ContentLength = null; // a chunked request
+
+        var document = await DavXmlReader.ReadRequestBodyAsync(context);
+
+        document.Should().BeNull("the body is only read when Content-Length is set");
+    }
+
+    private static Microsoft.AspNetCore.Http.DefaultHttpContext Request(string body)
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes(body);
+        var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+        context.Request.Body = new MemoryStream(bytes);
+        context.Request.ContentLength = bytes.Length;
+        return context;
+    }
 }
