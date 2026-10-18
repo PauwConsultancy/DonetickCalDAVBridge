@@ -1,0 +1,101 @@
+# RP-03 Create in the default list and in a label list (synthetic: Reminders, macOS 26 (reconstructed request patterns))
+
+## 1 PUT /caldav/calendars/{user}/tasks/4F3E2D1C-0B0A-4908-8F7E-6D5C4B3A2910.ics
+HTTP 201
+DAV: 1, 3, access-control, calendar-access
+ETag: "BEDDF713DE6699F5"
+Location: /caldav/calendars/tester/tasks/donetick-900.ics
+
+
+
+## 2 GET /caldav/calendars/{user}/tasks/4F3E2D1C-0B0A-4908-8F7E-6D5C4B3A2910.ics
+HTTP 200
+Content-Type: text/calendar; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+ETag: "BEDDF713DE6699F5"
+
+BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250615T090000Z
+DESCRIPTION:
+DTSTAMP:20250615T120000Z
+DTSTART;VALUE=DATE:20250620
+DUE:20250620T090000Z
+LAST-MODIFIED:20250615T120000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Repaint the fence
+UID:donetick-900@donetick
+END:VTODO
+END:VCALENDAR
+
+
+## 3 PUT /caldav/calendars/{user}/home/8A7B6C5D-4E3F-4A2B-9C1D-0E1F2A3B4C5D.ics
+HTTP 201
+DAV: 1, 3, access-control, calendar-access
+ETag: "30D52FB4553D1570"
+Location: /caldav/calendars/tester/tasks/donetick-900.ics
+
+
+
+## 4 PROPFIND /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype />
+        <d:getetag />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-900.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"30D52FB4553D1570"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>

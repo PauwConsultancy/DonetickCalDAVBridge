@@ -1,0 +1,471 @@
+# RP-02 Initial sync, then a refresh without changes (synthetic: Reminders, macOS 26 (reconstructed request patterns))
+
+## 1 PROPFIND /caldav/calendars/{user}/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:displayname>tester Calendars</d:displayname>
+        <d:resourcetype>
+          <d:collection />
+        </d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <apple:calendar-color />
+        <cal:calendar-description />
+        <cal:calendar-free-busy-set />
+        <apple:calendar-order />
+        <cal:calendar-timezone />
+        <d:current-user-privilege-set />
+        <cal:default-alarm-vevent-date />
+        <cs:getctag />
+        <cs:invite />
+        <d:owner />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+        <cal:supported-calendar-component-set />
+        <d:supported-report-set />
+        <d:sync-token />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <apple:calendar-color>#4A90D9FF</apple:calendar-color>
+        <cal:calendar-description>Tasks from Donetick</cal:calendar-description>
+        <apple:calendar-order>1</apple:calendar-order>
+        <d:current-user-privilege-set>
+          <d:privilege>
+            <d:read />
+          </d:privilege>
+          <d:privilege>
+            <d:write />
+          </d:privilege>
+          <d:privilege>
+            <d:read-current-user-privilege-set />
+          </d:privilege>
+        </d:current-user-privilege-set>
+        <d:displayname>DonetickTasks</d:displayname>
+        <cs:getctag>"{ctag}"</cs:getctag>
+        <d:owner>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:owner>
+        <d:resourcetype>
+          <d:collection />
+          <cal:calendar />
+        </d:resourcetype>
+        <cal:supported-calendar-component-set>
+          <cal:comp name="VTODO" />
+        </cal:supported-calendar-component-set>
+        <d:supported-report-set>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-query />
+            </d:report>
+          </d:supported-report>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-multiget />
+            </d:report>
+          </d:supported-report>
+        </d:supported-report-set>
+        <d:sync-token>http://donetick-caldav/sync/"{ctag}"</d:sync-token>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <cal:calendar-free-busy-set />
+        <cal:calendar-timezone />
+        <cal:default-alarm-vevent-date />
+        <cs:invite />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 2 PROPFIND /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <cs:getctag>"{ctag}"</cs:getctag>
+        <d:sync-token>http://donetick-caldav/sync/"{ctag}"</d:sync-token>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 3 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:sync-token>"{ctag}"</d:sync-token>
+</d:multistatus>
+
+## 4 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Water the plants
+UID:donetick-101@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Finance
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250701
+DUE:20250701T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:3
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Pay rent
+UID:donetick-102@donetick
+X-APPLE-HASHTAGS:Finance
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:Milk\, bread
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Buy groceries
+UID:donetick-103@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home,Outdoor
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250619
+DUE:20250619T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Clean the gutters
+UID:donetick-104@donetick
+X-APPLE-HASHTAGS:Home\,Outdoor
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:Ask about the check-up
+DTSTAMP:20250615T100000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Call the dentist
+UID:donetick-105@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Take out the bins
+UID:donetick-106@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 5 PROPFIND /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <cs:getctag>"{ctag}"</cs:getctag>
+        <d:sync-token>http://donetick-caldav/sync/"{ctag}"</d:sync-token>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 6 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:sync-token>"{ctag}"</d:sync-token>
+</d:multistatus>

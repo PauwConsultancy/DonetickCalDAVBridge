@@ -9,6 +9,7 @@ This folder holds the design documentation of the bridge, reverse engineered fro
 | [technical-design.md](technical-design.md) | Developer, maintainer | Architecture, stack, data model, startup, request pipeline, CalDAV implementation, caching, write path, VTODO mapping, Donetick integration, security, deployment, testing, design decisions |
 | [testing-strategy.md](testing-strategy.md) | Developer, maintainer | Risk-based test strategy: test levels, scenario catalogue, test data, CI gates, traceability and roadmap |
 | [testing/apple-acceptance.md](testing/apple-acceptance.md) | Tester, maintainer | Manual Apple acceptance checklist, run before each release |
+| [testing/apple-recording.md](testing/apple-recording.md) | Tester, maintainer | How to record an Apple session and add it to the replay tests |
 | [findings.md](findings.md) | Developer, maintainer | Defects, risks, improvement proposals and documentation drift found during the reverse engineering |
 | [../README.md](../README.md) | User, operator | Installation and configuration guide |
 | [../instructions.md](../instructions.md) | Developer, AI assistant | Rationale behind deliberate design choices and stop conditions |

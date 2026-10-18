@@ -1,0 +1,41 @@
+{
+  "id": "RP-07",
+  "title": "Drag between lists (MOVE)",
+  "source": "synthetic",
+  "client": "Reminders, macOS 26 (reconstructed request patterns)",
+  "recorded": null,
+  "notes": "Synthetic: written by hand from the request patterns Apple Reminders is known to use (methods, depths, property sets, the double PUT on completion). Not captured from a device. Replace with a recorded session (docs/testing/apple-recording.md) and keep this file until the recording covers the same scenario.",
+  "bridge": {
+    "groupByLabel": true
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "MOVE",
+        "path": "/caldav/calendars/{user}/home/donetick-103.ics",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Destination": "/caldav/calendars/{user}/finance/donetick-103.ics",
+          "Overwrite": "F"
+        },
+        "authenticated": true,
+        "body": null
+      },
+      "response": {
+        "status": 403
+      }
+    }
+  ],
+  "expectDonetick": [
+    {
+      "method": "PUT",
+      "path": "/eapi/v1/chore/103",
+      "count": 0
+    },
+    {
+      "method": "DELETE",
+      "path": "/eapi/v1/chore/103",
+      "count": 0
+    }
+  ]
+}

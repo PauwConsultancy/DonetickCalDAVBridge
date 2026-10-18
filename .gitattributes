@@ -1,0 +1,3 @@
+# Approved snapshots (tests/**/Snapshots) are stored exactly as reviewed: no line-ending conversion on
+# checkout. The snapshot helper normalises line endings itself when it compares.
+*.verified.* -text

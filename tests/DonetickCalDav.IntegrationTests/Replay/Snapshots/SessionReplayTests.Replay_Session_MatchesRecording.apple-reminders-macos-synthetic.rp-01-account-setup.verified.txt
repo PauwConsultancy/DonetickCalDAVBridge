@@ -1,0 +1,215 @@
+# RP-01 Account setup (discovery) (synthetic: Reminders, macOS 26 (reconstructed request patterns))
+
+## 1 PROPFIND /.well-known/caldav
+HTTP 301
+DAV: 1, 3, access-control, calendar-access
+Location: /caldav/
+
+
+
+## 2 PROPFIND /caldav/
+HTTP 401
+DAV: 1, 3, access-control, calendar-access
+WWW-Authenticate: Basic realm="DonetickCalDAV"
+
+
+
+## 3 PROPFIND /caldav/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:current-user-principal>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:current-user-principal>
+        <d:principal-URL>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:principal-URL>
+        <d:resourcetype>
+          <d:collection />
+        </d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 4 OPTIONS /caldav/principals/{user}/
+HTTP 200
+DAV: 1, 3, access-control, calendar-access
+Allow: OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT
+
+
+
+## 5 PROPFIND /caldav/principals/{user}/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/principals/tester/</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-home-set>
+          <d:href>/caldav/calendars/tester/</d:href>
+        </cal:calendar-home-set>
+        <d:current-user-principal>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:current-user-principal>
+        <d:displayname>tester</d:displayname>
+        <d:principal-URL>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:principal-URL>
+        <d:supported-report-set>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-query />
+            </d:report>
+          </d:supported-report>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-multiget />
+            </d:report>
+          </d:supported-report>
+        </d:supported-report-set>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-user-address-set />
+        <cs:dropbox-home-URL />
+        <cs:email-address-set />
+        <cs:notification-URL />
+        <d:principal-collection-set />
+        <d:resource-id />
+        <cal:schedule-inbox-URL />
+        <cal:schedule-outbox-URL />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 6 PROPFIND /caldav/calendars/{user}/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:displayname>tester Calendars</d:displayname>
+        <d:resourcetype>
+          <d:collection />
+        </d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <apple:calendar-color />
+        <cal:calendar-description />
+        <cal:calendar-free-busy-set />
+        <apple:calendar-order />
+        <cal:calendar-timezone />
+        <d:current-user-privilege-set />
+        <cal:default-alarm-vevent-date />
+        <cs:getctag />
+        <cs:invite />
+        <d:owner />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+        <cal:supported-calendar-component-set />
+        <d:supported-report-set />
+        <d:sync-token />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <apple:calendar-color>#4A90D9FF</apple:calendar-color>
+        <cal:calendar-description>Tasks from Donetick</cal:calendar-description>
+        <apple:calendar-order>1</apple:calendar-order>
+        <d:current-user-privilege-set>
+          <d:privilege>
+            <d:read />
+          </d:privilege>
+          <d:privilege>
+            <d:write />
+          </d:privilege>
+          <d:privilege>
+            <d:read-current-user-privilege-set />
+          </d:privilege>
+        </d:current-user-privilege-set>
+        <d:displayname>DonetickTasks</d:displayname>
+        <cs:getctag>"{ctag}"</cs:getctag>
+        <d:owner>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:owner>
+        <d:resourcetype>
+          <d:collection />
+          <cal:calendar />
+        </d:resourcetype>
+        <cal:supported-calendar-component-set>
+          <cal:comp name="VTODO" />
+        </cal:supported-calendar-component-set>
+        <d:supported-report-set>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-query />
+            </d:report>
+          </d:supported-report>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-multiget />
+            </d:report>
+          </d:supported-report>
+        </d:supported-report-set>
+        <d:sync-token>http://donetick-caldav/sync/"{ctag}"</d:sync-token>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <cal:calendar-free-busy-set />
+        <cal:calendar-timezone />
+        <cal:default-alarm-vevent-date />
+        <cs:invite />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>

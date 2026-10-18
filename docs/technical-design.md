@@ -474,7 +474,9 @@ Three projects under `tests/`, all on xUnit v3 and Microsoft.Testing.Platform (o
 
 - `DonetickCalDav.Tests`: unit tests; references the application project (`InternalsVisibleTo` exposes internal members such as `AdjustToScheduledTime` and the `ChoreSyncService` timings).
 - `DonetickCalDav.IntegrationTests`: the application hosted in-process with `WebApplicationFactory<Program>`, Donetick replaced by a WireMock.Net stub and the clock by a fake `TimeProvider` (testing strategy, 5.3).
-- `DonetickCalDav.Testing`: shared helpers, no tests: `TestChoreFactory`, `TestTimeProvider` and the integration harness (`BridgeHost`, `DonetickStub`, `CalDavClient`).
+- `DonetickCalDav.Testing`: shared helpers, no tests: `TestChoreFactory` and `ChoreMatrix`, `TestTimeProvider`, the integration harness (`BridgeHost`, `DonetickStub`, `CalDavClient`, `AppleRequests`, the replay session model) and the snapshot helper (`Snapshot`, `Scrubbers`).
+
+Approved snapshots live in `Snapshots/` folders next to their test classes: the ICS matrix (SN-01) in the unit project, HTTP responses (SN-02 to SN-05) and replay transcripts (L3) in the integration project. Replay sessions and Donetick fixtures are under `tests/fixtures`.
 
 The table lists the unit test classes.
 

@@ -82,7 +82,11 @@ public sealed class CalDavClient
         if (depth is { } d)
             request.Headers.TryAddWithoutValidation("Depth", d.ToString());
         if (body != null)
-            request.Content = new StringContent(body, Encoding.UTF8, contentType ?? "application/xml");
+        {
+            // Parsed as a whole, so parameters such as charset="utf-8" from recorded sessions survive.
+            request.Content = new StringContent(body, Encoding.UTF8);
+            request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType ?? "application/xml; charset=utf-8");
+        }
         configure?.Invoke(request);
 
         using var response = await _http.SendAsync(request, TestContext.Current.CancellationToken);
@@ -147,6 +151,26 @@ public sealed class DavResponse(HttpStatusCode status, IReadOnlyDictionary<strin
 
     /// <summary>The <c>getetag</c> of the response for <paramref name="href"/>, or null.</summary>
     public string? GetETag(string href) => Property(href, Dav.D + "getetag")?.Value;
+
+    /// <summary>
+    /// Text form for snapshots: status line, the named headers in the given order, and the body
+    /// (XML re-indented). Volatile values are left to the caller's scrubbers.
+    /// </summary>
+    public string ToSnapshot(params string[] headerNames)
+    {
+        var text = new System.Text.StringBuilder($"HTTP {(int)Status}\n");
+        foreach (var name in headerNames)
+        {
+            if (Header(name) is { } value)
+                text.Append($"{name}: {value}\n");
+        }
+
+        text.Append('\n');
+        text.Append(LooksLikeXml(Body) ? Snapshots.Scrubbers.Xml(Body) : Body);
+        return text.ToString();
+    }
+
+    private static bool LooksLikeXml(string body) => body.TrimStart().StartsWith('<') && !body.TrimStart().StartsWith("<!DOCTYPE");
 
     public override string ToString() => $"{(int)Status} {Status}\n{Body}";
 }

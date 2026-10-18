@@ -189,9 +189,12 @@ or making the project accessible from the public internet by default.
   wiring, wire-format and concurrency defects slip past unit tests and manual checks
 - Approved test dependencies (no need to ask again): xunit.v3, Microsoft.AspNetCore.Mvc.Testing,
   WireMock.Net, Microsoft.Extensions.TimeProvider.Testing
-- Snapshot tests use a small in-house helper (`tests/DonetickCalDav.Testing`), not a library. Verify
-  was rejected because of its maintenance fee for revenue-generating use (strategy chapter 13); do not
-  add a snapshot library without revisiting that decision
+- Snapshot tests use a small in-house helper (`tests/DonetickCalDav.Testing/Snapshots`), not a library.
+  Verify was rejected because of its maintenance fee for revenue-generating use (strategy chapter 13);
+  do not add a snapshot library without revisiting that decision
+- Approve new or changed snapshots with `SNAPSHOT_ACCEPT=1 dotnet test ...` and review the changed
+  `.verified` files like code: a snapshot change is a wire-format change. Recorded client sessions go
+  into `tests/fixtures/sessions` (docs/testing/apple-recording.md)
 - Every defect gets a test before the fix; open findings get characterization tests tagged `KnownIssue`
 
 ## MCP servers

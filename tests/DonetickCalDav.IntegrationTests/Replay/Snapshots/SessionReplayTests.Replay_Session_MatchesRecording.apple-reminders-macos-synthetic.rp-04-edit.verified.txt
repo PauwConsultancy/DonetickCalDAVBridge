@@ -1,0 +1,32 @@
+# RP-04 Edit title, notes and due date (synthetic: Reminders, macOS 26 (reconstructed request patterns))
+
+## 1 PUT /caldav/calendars/{user}/tasks/donetick-103.ics
+HTTP 204
+DAV: 1, 3, access-control, calendar-access
+ETag: "095B3EF913422D2C"
+
+
+
+## 2 GET /caldav/calendars/{user}/tasks/donetick-103.ics
+HTTP 200
+Content-Type: text/calendar; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+ETag: "095B3EF913422D2C"
+
+BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250615T090000Z
+DESCRIPTION:Milk\, bread\, tulips
+DTSTAMP:20250615T120000Z
+DTSTART;VALUE=DATE:20250617
+DUE:20250617T090000Z
+LAST-MODIFIED:20250615T120000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Buy groceries and flowers
+UID:donetick-103@donetick
+END:VTODO
+END:VCALENDAR

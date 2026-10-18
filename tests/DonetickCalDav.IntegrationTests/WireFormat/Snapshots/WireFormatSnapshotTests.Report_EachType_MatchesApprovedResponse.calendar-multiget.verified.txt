@@ -1,0 +1,69 @@
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Water the plants
+UID:donetick-101@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:Ask about the check-up
+DTSTAMP:20250615T100000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Call the dentist
+UID:donetick-105@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-999.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getetag />
+        <cal:calendar-data />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>

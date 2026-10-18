@@ -1,0 +1,6 @@
+# RP-07 Drag between lists (MOVE) (synthetic: Reminders, macOS 26 (reconstructed request patterns))
+
+## 1 MOVE /caldav/calendars/{user}/home/donetick-103.ics
+HTTP 403
+DAV: 1, 3, access-control, calendar-access
+Allow: OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT

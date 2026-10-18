@@ -1,0 +1,300 @@
+{
+  "id": "PIPELINE",
+  "title": "Toolchain check: discovery, list, create, edit, complete, delete",
+  "source": "recorded",
+  "client": "python caldav 3.5.0 through mitmproxy 12.2.3",
+  "recorded": "2026-10-18",
+  "notes": "Not an Apple client. Recorded through the same mitmproxy capture and conversion an Apple recording uses, to prove the toolchain end to end, and kept as a replay of an independent CalDAV client.",
+  "bridge": {
+    "groupByLabel": false
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/.well-known/caldav",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "0"
+        },
+        "authenticated": false,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<D:propfind xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><D:current-user-principal/></D:prop></D:propfind>"
+      },
+      "response": {
+        "status": 301
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Depth": "0"
+        },
+        "authenticated": false,
+        "body": null
+      },
+      "response": {
+        "status": 401
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/.well-known/caldav",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "0"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<D:propfind xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><D:current-user-principal/></D:prop></D:propfind>"
+      },
+      "response": {
+        "status": 301
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Depth": "0"
+        },
+        "authenticated": true,
+        "body": null
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/principals/{user}/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "0"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<D:propfind xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><C:calendar-home-set/></D:prop></D:propfind>"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/calendars/{user}/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "1"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<D:propfind xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><D:resourcetype/><D:displayname/><C:supported-calendar-component-set/></D:prop></D:propfind>"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "REPORT",
+        "path": "/caldav/calendars/{user}/tasks/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "1"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><C:calendar-data/><D:getetag/><C:schedule-tag/></D:prop><C:filter><C:comp-filter name=\"VCALENDAR\"><C:comp-filter name=\"VTODO\"/></C:comp-filter></C:filter></C:calendar-query>"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/caldav/calendars/{user}/tasks/00000000-0000-4000-8000-000000000001.ics",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/calendar; charset=\"utf-8\""
+        },
+        "authenticated": true,
+        "body": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//python-caldav//caldav//en_DK\r\nBEGIN:VTODO\r\nDTSTAMP:20261018T063555Z\r\nDUE;VALUE=DATE:20250620\r\nSTATUS:NEEDS-ACTION\r\nSUMMARY:Recorded by python caldav\r\nUID:00000000-0000-4000-8000-000000000001\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"
+      },
+      "response": {
+        "status": 201
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/caldav/calendars/{user}/tasks/00000000-0000-4000-8000-000000000001.ics",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar"
+        },
+        "authenticated": true,
+        "body": null
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/caldav/calendars/{user}/tasks/00000000-0000-4000-8000-000000000001.ics",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/calendar; charset=\"utf-8\"",
+          "If-Match": "\"DB0F3B9DE74AD6EA\""
+        },
+        "authenticated": true,
+        "body": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Donetick//CalDAV Bridge//EN\r\nBEGIN:VTODO\r\nCREATED:20250615T090000Z\r\nDESCRIPTION:\r\nDTSTAMP:20250615T120000Z\r\nDTSTART;VALUE=DATE:20250620\r\nDUE:20250620T090000Z\r\nLAST-MODIFIED:20250615T120000Z\r\nPRIORITY:0\r\nSEQUENCE:1\r\nSTATUS:NEEDS-ACTION\r\nSUMMARY:Recorded and renamed\r\nUID:donetick-900@donetick\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "request": {
+        "method": "REPORT",
+        "path": "/caldav/calendars/{user}/tasks/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "1"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><C:calendar-data/><D:getetag/><C:schedule-tag/></D:prop><C:filter><C:comp-filter name=\"VCALENDAR\"><C:comp-filter name=\"VTODO\"><C:prop-filter name=\"COMPLETED\"><C:is-not-defined/></C:prop-filter><C:prop-filter name=\"STATUS\"><C:text-match collation=\"i;octet\" negate-condition=\"yes\">COMPLETED</C:text-match></C:prop-filter><C:prop-filter name=\"STATUS\"><C:text-match collation=\"i;octet\" negate-condition=\"yes\">CANCELLED</C:text-match></C:prop-filter></C:comp-filter></C:comp-filter></C:filter></C:calendar-query>"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "REPORT",
+        "path": "/caldav/calendars/{user}/tasks/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "1"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><C:calendar-data/><D:getetag/><C:schedule-tag/></D:prop><C:filter><C:comp-filter name=\"VCALENDAR\"><C:comp-filter name=\"VTODO\"><C:prop-filter name=\"COMPLETED\"><C:is-not-defined/></C:prop-filter><C:prop-filter name=\"STATUS\"><C:is-not-defined/></C:prop-filter></C:comp-filter></C:comp-filter></C:filter></C:calendar-query>"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "REPORT",
+        "path": "/caldav/calendars/{user}/tasks/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "1"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><C:calendar-data/><D:getetag/><C:schedule-tag/></D:prop><C:filter><C:comp-filter name=\"VCALENDAR\"><C:comp-filter name=\"VTODO\"><C:prop-filter name=\"STATUS\"><C:text-match collation=\"i;octet\">NEEDS-ACTION</C:text-match></C:prop-filter></C:comp-filter></C:comp-filter></C:filter></C:calendar-query>"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/caldav/calendars/{user}/tasks/donetick-103.ics",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/calendar; charset=\"utf-8\"",
+          "If-Match": "\"98B2E27C1AC41DE6\""
+        },
+        "authenticated": true,
+        "body": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Donetick//CalDAV Bridge//EN\r\nBEGIN:VTODO\r\nCATEGORIES:Home\r\nCOMPLETED:20261018T063555Z\r\nCREATED:20250601T100000Z\r\nDESCRIPTION:Milk\\, bread\r\nDTSTAMP:20250615T100000Z\r\nDTSTART;VALUE=DATE:20250616\r\nDUE:20250616T060000Z\r\nLAST-MODIFIED:20250615T100000Z\r\nPRIORITY:0\r\nSEQUENCE:1\r\nSTATUS:COMPLETED\r\nSUMMARY:Buy groceries\r\nUID:donetick-103@donetick\r\nX-APPLE-HASHTAGS:Home\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "request": {
+        "method": "REPORT",
+        "path": "/caldav/calendars/{user}/tasks/",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar",
+          "Content-Type": "text/xml",
+          "Depth": "1"
+        },
+        "authenticated": true,
+        "body": "<?xml version='1.0' encoding='utf-8'?>\r\n<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\"><D:prop><C:calendar-data/><D:getetag/><C:schedule-tag/></D:prop><C:filter><C:comp-filter name=\"VCALENDAR\"><C:comp-filter name=\"VTODO\"/></C:comp-filter></C:filter></C:calendar-query>"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/caldav/calendars/{user}/tasks/donetick-105.ics",
+        "headers": {
+          "User-Agent": "python-caldav/3.5.0",
+          "Accept": "text/xml, text/calendar"
+        },
+        "authenticated": true,
+        "body": null
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  ],
+  "expectDonetick": [
+    {
+      "method": "POST",
+      "path": "/eapi/v1/chore",
+      "count": 1
+    },
+    {
+      "method": "PUT",
+      "path": "/eapi/v1/chore/900",
+      "count": 1
+    },
+    {
+      "method": "POST",
+      "path": "/eapi/v1/chore/103/complete",
+      "count": 1
+    },
+    {
+      "method": "DELETE",
+      "path": "/eapi/v1/chore/105",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+# RP-06 Delete (synthetic: Reminders, macOS 26 (reconstructed request patterns))
+
+## 1 DELETE /caldav/calendars/{user}/tasks/donetick-105.ics
+HTTP 204
+DAV: 1, 3, access-control, calendar-access
+
+
+
+## 2 PROPFIND /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype />
+        <d:getetag />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:getcontenttype>text/calendar; component=vtodo</d:getcontenttype>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>

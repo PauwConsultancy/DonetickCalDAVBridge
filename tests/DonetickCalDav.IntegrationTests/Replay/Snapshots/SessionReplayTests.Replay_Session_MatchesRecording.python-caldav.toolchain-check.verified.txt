@@ -1,0 +1,1124 @@
+# PIPELINE Toolchain check: discovery, list, create, edit, complete, delete (recorded: python caldav 3.5.0 through mitmproxy 12.2.3)
+
+## 1 PROPFIND /.well-known/caldav
+HTTP 301
+DAV: 1, 3, access-control, calendar-access
+Location: /caldav/
+
+
+
+## 2 PROPFIND /caldav/
+HTTP 401
+DAV: 1, 3, access-control, calendar-access
+WWW-Authenticate: Basic realm="DonetickCalDAV"
+
+
+
+## 3 PROPFIND /.well-known/caldav
+HTTP 301
+DAV: 1, 3, access-control, calendar-access
+Location: /caldav/
+
+
+
+## 4 PROPFIND /caldav/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:current-user-principal>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:current-user-principal>
+        <d:resourcetype>
+          <d:collection />
+        </d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 5 PROPFIND /caldav/principals/{user}/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/principals/tester/</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-home-set>
+          <d:href>/caldav/calendars/tester/</d:href>
+        </cal:calendar-home-set>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 6 PROPFIND /caldav/calendars/{user}/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype>
+          <d:collection />
+        </d:resourcetype>
+        <d:displayname>tester Calendars</d:displayname>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <cal:supported-calendar-component-set />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype>
+          <d:collection />
+          <cal:calendar />
+        </d:resourcetype>
+        <d:displayname>DonetickTasks</d:displayname>
+        <cal:supported-calendar-component-set>
+          <cal:comp name="VTODO" />
+        </cal:supported-calendar-component-set>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 7 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Water the plants
+UID:donetick-101@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Finance
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250701
+DUE:20250701T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:3
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Pay rent
+UID:donetick-102@donetick
+X-APPLE-HASHTAGS:Finance
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:Milk\, bread
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Buy groceries
+UID:donetick-103@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home,Outdoor
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250619
+DUE:20250619T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Clean the gutters
+UID:donetick-104@donetick
+X-APPLE-HASHTAGS:Home\,Outdoor
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:Ask about the check-up
+DTSTAMP:20250615T100000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Call the dentist
+UID:donetick-105@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Take out the bins
+UID:donetick-106@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 8 PUT /caldav/calendars/{user}/tasks/00000000-0000-4000-8000-000000000001.ics
+HTTP 201
+DAV: 1, 3, access-control, calendar-access
+ETag: "DB0F3B9DE74AD6EA"
+Location: /caldav/calendars/tester/tasks/donetick-900.ics
+
+
+
+## 9 GET /caldav/calendars/{user}/tasks/00000000-0000-4000-8000-000000000001.ics
+HTTP 200
+Content-Type: text/calendar; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+ETag: "DB0F3B9DE74AD6EA"
+
+BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250615T090000Z
+DESCRIPTION:
+DTSTAMP:20250615T120000Z
+DTSTART;VALUE=DATE:20250620
+DUE:20250620T090000Z
+LAST-MODIFIED:20250615T120000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Recorded by python caldav
+UID:donetick-900@donetick
+END:VTODO
+END:VCALENDAR
+
+
+## 10 PUT /caldav/calendars/{user}/tasks/00000000-0000-4000-8000-000000000001.ics
+HTTP 204
+DAV: 1, 3, access-control, calendar-access
+ETag: "908C05855DA445FE"
+
+
+
+## 11 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Water the plants
+UID:donetick-101@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Finance
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250701
+DUE:20250701T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:3
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Pay rent
+UID:donetick-102@donetick
+X-APPLE-HASHTAGS:Finance
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:Milk\, bread
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Buy groceries
+UID:donetick-103@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home,Outdoor
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250619
+DUE:20250619T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Clean the gutters
+UID:donetick-104@donetick
+X-APPLE-HASHTAGS:Home\,Outdoor
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:Ask about the check-up
+DTSTAMP:20250615T100000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Call the dentist
+UID:donetick-105@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Take out the bins
+UID:donetick-106@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-900.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250615T090000Z
+DESCRIPTION:
+DTSTAMP:20250615T120000Z
+DTSTART;VALUE=DATE:20250620
+DUE:20250620T090000Z
+LAST-MODIFIED:20250615T120000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Recorded and renamed
+UID:donetick-900@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"908C05855DA445FE"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 12 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Water the plants
+UID:donetick-101@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Finance
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250701
+DUE:20250701T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:3
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Pay rent
+UID:donetick-102@donetick
+X-APPLE-HASHTAGS:Finance
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:Milk\, bread
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Buy groceries
+UID:donetick-103@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home,Outdoor
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250619
+DUE:20250619T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Clean the gutters
+UID:donetick-104@donetick
+X-APPLE-HASHTAGS:Home\,Outdoor
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:Ask about the check-up
+DTSTAMP:20250615T100000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Call the dentist
+UID:donetick-105@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Take out the bins
+UID:donetick-106@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-900.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250615T090000Z
+DESCRIPTION:
+DTSTAMP:20250615T120000Z
+DTSTART;VALUE=DATE:20250620
+DUE:20250620T090000Z
+LAST-MODIFIED:20250615T120000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Recorded and renamed
+UID:donetick-900@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"908C05855DA445FE"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 13 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Water the plants
+UID:donetick-101@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Finance
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250701
+DUE:20250701T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:3
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Pay rent
+UID:donetick-102@donetick
+X-APPLE-HASHTAGS:Finance
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:Milk\, bread
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Buy groceries
+UID:donetick-103@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home,Outdoor
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250619
+DUE:20250619T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Clean the gutters
+UID:donetick-104@donetick
+X-APPLE-HASHTAGS:Home\,Outdoor
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:Ask about the check-up
+DTSTAMP:20250615T100000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Call the dentist
+UID:donetick-105@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Take out the bins
+UID:donetick-106@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-900.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250615T090000Z
+DESCRIPTION:
+DTSTAMP:20250615T120000Z
+DTSTART;VALUE=DATE:20250620
+DUE:20250620T090000Z
+LAST-MODIFIED:20250615T120000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Recorded and renamed
+UID:donetick-900@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"908C05855DA445FE"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 14 PUT /caldav/calendars/{user}/tasks/donetick-103.ics
+HTTP 204
+DAV: 1, 3, access-control, calendar-access
+
+
+
+## 15 REPORT /caldav/calendars/{user}/tasks/
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-101.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Water the plants
+UID:donetick-101@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"2055DD04A297B402"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-102.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Finance
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250701
+DUE:20250701T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:3
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Pay rent
+UID:donetick-102@donetick
+X-APPLE-HASHTAGS:Finance
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"06CB706BF55A9AF9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-103.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:Milk\, bread
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Buy groceries
+UID:donetick-103@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"98B2E27C1AC41DE6"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-104.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home,Outdoor
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250619
+DUE:20250619T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Clean the gutters
+UID:donetick-104@donetick
+X-APPLE-HASHTAGS:Home\,Outdoor
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"9F9AAB513317704F"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-105.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CREATED:20250601T100000Z
+DESCRIPTION:Ask about the check-up
+DTSTAMP:20250615T100000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Call the dentist
+UID:donetick-105@donetick
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"BC0A78DE9F2DD1F9"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/donetick-106.ics</d:href>
+    <d:propstat>
+      <d:prop>
+        <cal:calendar-data>BEGIN:VCALENDAR
+PRODID:-//Donetick//CalDAV Bridge//EN
+VERSION:2.0
+BEGIN:VTODO
+CATEGORIES:Home
+CREATED:20250601T100000Z
+DESCRIPTION:
+DTSTAMP:20250615T100000Z
+DTSTART;VALUE=DATE:20250616
+DUE:20250616T060000Z
+LAST-MODIFIED:20250615T100000Z
+PRIORITY:0
+SEQUENCE:0
+STATUS:NEEDS-ACTION
+SUMMARY:Take out the bins
+UID:donetick-106@donetick
+X-APPLE-HASHTAGS:Home
+END:VTODO
+END:VCALENDAR
+</cal:calendar-data>
+        <d:getetag>"1E8E3362BA7BA8C7"</d:getetag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+
+## 16 DELETE /caldav/calendars/{user}/tasks/donetick-105.ics
+HTTP 204
+DAV: 1, 3, access-control, calendar-access

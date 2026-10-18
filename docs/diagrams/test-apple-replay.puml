@@ -6,27 +6,29 @@ title Apple traffic capture and replay (L3)
 start
 
 partition "Capture (once per macOS or iOS major version)" {
-  :Run the bridge against a seeded test Donetick;
+  :Run the bridge against the reference data
+  (WireMock stub with tests/fixtures/donetick/mappings);
   :Route the Apple device through mitmproxy
-  (reverse proxy with TLS) or enable the capture middleware;
-  :Run the scripted session: add account, browse lists,
-  create, edit, complete a recurring task, delete, drag;
-  :Export the request and response pairs;
+  (reverse proxy with TLS, flow file with -w);
+  :Perform one scenario per flow file: add account,
+  sync, create, edit, complete a recurring task, delete, drag;
 }
 
-partition "Sanitise" {
-  :Remove Authorization headers and host names;
-  :Normalise volatile values
-  (client UIDs, DTSTAMP, CTag, ETag);
-  :Store as fixture under
-  tests/fixtures/apple/<client>/<scenario>;
+partition "Convert and sanitise (capture_to_session.py)" {
+  :Keep only CalDAV requests, in order;
+  :Remove credentials, host names and cookies;
+  :Replace the user name with a placeholder
+  and client UUIDs with stable fake ones;
+  :Add the expected Donetick calls by hand and review;
+  :Store as tests/fixtures/sessions/<client>/<scenario>.json;
 }
 
-partition "Replay (every build)" {
-  :Seed WireMock with the Donetick state of the recording;
-  :Send the recorded requests in order through the integration harness;
-  :Assert status codes and key headers;
-  :Compare response bodies with approved snapshots;
+partition "Replay (every build, SessionReplayTests)" {
+  :Start the bridge in the harness with the reference mappings;
+  :Send the recorded requests in order;
+  :Assert each status equals the recorded status;
+  :Assert the expected Donetick calls;
+  :Compare the response transcript with the approved snapshot;
 }
 
 stop

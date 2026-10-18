@@ -1,0 +1,51 @@
+{
+  "id": "RP-06",
+  "title": "Delete",
+  "source": "synthetic",
+  "client": "Reminders, macOS 26 (reconstructed request patterns)",
+  "recorded": null,
+  "notes": "Synthetic: written by hand from the request patterns Apple Reminders is known to use (methods, depths, property sets, the double PUT on completion). Not captured from a device. Replace with a recorded session (docs/testing/apple-recording.md) and keep this file until the recording covers the same scenario.",
+  "bridge": {
+    "groupByLabel": false
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "DELETE",
+        "path": "/caldav/calendars/{user}/tasks/donetick-105.ics",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "If-Match": "\"0000000000000000\""
+        },
+        "authenticated": true,
+        "body": null
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/calendars/{user}/tasks/",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Depth": "1",
+          "Content-Type": "text/xml"
+        },
+        "authenticated": true,
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<A:propfind xmlns:A=\"DAV:\">\n  <A:prop>\n    <A:getcontenttype/>\n    <A:getetag/>\n  </A:prop>\n</A:propfind>\n"
+      },
+      "response": {
+        "status": 207
+      }
+    }
+  ],
+  "expectDonetick": [
+    {
+      "method": "DELETE",
+      "path": "/eapi/v1/chore/105",
+      "count": 1
+    }
+  ]
+}

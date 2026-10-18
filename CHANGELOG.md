@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration scenarios IT-01 to IT-16 (discovery, authentication, calendars, reports, GET, create, edit, complete, delete, rejected operations, input limits, Donetick faults, startup, health, concurrency) and characterization tests for open findings; line coverage of hand-written code rises from 46.7 % to 91.5 %
 - Test fixtures: WireMock mapping files for the Donetick eAPI and payloads recorded from Donetick v0.1.82, with the provisioning and recording scripts (`tests/e2e`)
 - Coverage report and gate (`tests/coverage`): merged Cobertura from all test projects, 80 % floor plus a ratchet
+- Snapshot tests with an in-house helper: the ICS matrix (48 approved files) and full HTTP responses for PROPFIND, REPORT, errors and health
+- Replay tests (L3): client sessions under `tests/fixtures/sessions` replayed through the integration harness; synthetic Apple Reminders sessions RP-01 to RP-07, a recorded session of the Python `caldav` client, a capture converter and a recording guide (`docs/testing/apple-recording.md`)
 
 ### Changed
 - Ical.Net 4.3.1 to 5.2.3 (v4 is out of support); code migrated to the v5 API
@@ -29,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `docs/` with a functional design, a technical design, a findings report and PlantUML diagrams (sources and rendered SVGs), reverse engineered from 0.7.1
 - README: link to the design documentation
 - Added a testing strategy (`docs/testing-strategy.md`) and an Apple acceptance checklist (`docs/testing/apple-acceptance.md`)
-- Findings F-23 to F-28 from the integration tests and a real Donetick: Preserve Scheduled Time cannot parse Donetick's timestamp format, a JSON object without `Res` empties the cache, timestamps outside UTC, DELETE of an already deleted chore, malformed base URL message, chunked PUT over 1 MB
+- Findings F-23 to F-29 from the integration tests and a real Donetick: Preserve Scheduled Time cannot parse Donetick's timestamp format, a JSON object without `Res` empties the cache, timestamps outside UTC, DELETE of an already deleted chore, malformed base URL message, chunked PUT over 1 MB, unescaped backslashes in ICS text
 
 ## [0.7.1] — 2026-04-20
 

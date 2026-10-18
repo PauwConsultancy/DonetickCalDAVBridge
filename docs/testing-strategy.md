@@ -16,7 +16,7 @@ The project is deliberately used as a reference case for practices that are mean
 
 The key technical assumptions were checked with throwaway spikes before acceptance (appendix B): the integration harness works with this `Program.cs`, a fake clock skips the retry delays through the full CalDAV pipeline, a fresh Donetick can be provisioned over its REST API, and the snapshot library works on the chosen test stack. Snapshots use a small in-house helper of about 75 lines (prototype in appendix C) instead of a library: Verify now carries a maintenance fee for revenue-generating use, and the free alternatives are less complete (chapter 13).
 
-Next step: phase 2 (snapshot tests and the Apple replay runner); phases 0 and 1 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
+Next step: phase 3 (the CI pipeline); phases 0 to 2 are done. Phase 1 raised line coverage of hand-written code from 46.7 % to 91.5 % and surfaced six new findings (F-23 to F-28), among them a cache-emptying response parser and a Preserve Scheduled Time option that does not work with current Donetick data.
 
 ## 1 Purpose and scope
 This document defines how the bridge is tested: which risks matter, which test levels address them, the tools, test data, conventions, the CI pipeline with its quality gates, and a phased roadmap.
@@ -115,6 +115,10 @@ Snapshot tests store the output once as an approved file and fail on any differe
 | SN-04 | Error responses: 401 headers, 403 and 405 with `Allow`, PROPPATCH 207 | |
 | SN-05 | `/health/json` body | Uptime and version scrubbed |
 
+Implementation (phase 2): the helper is `Snapshot.Match` in `tests/DonetickCalDav.Testing/Snapshots`, with `Scrubbers` for the global CTag, uptime, version, local ports and GUIDs, and an XML re-indenter. SN-01 lives in the unit test project (`VTodoSnapshotTests`, 12 chore scenarios from `ChoreMatrix` times 4 settings, 48 files); SN-02 to SN-05 in the integration project (`WireFormatSnapshotTests`, Apple-style request bodies from `AppleRequests`). HTTP snapshots are text files with the status line, selected headers and the re-indented body. `.gitattributes` keeps git from converting line endings in `*.verified.*` files. Building the matrix surfaced finding F-29 (backslashes are not escaped in ICS text).
+
+The helper finds its approved files through the caller's source path (`[CallerFilePath]`), so test projects must not be built with `ContinuousIntegrationBuild` or path mapping, which would rewrite those paths.
+
 Volatile values are scrubbed before comparison: the random global CTag, uptime and version. `DTSTAMP` needs no scrubbing because it derives from fixed test data. Snapshots are stored with their real extension (`.verified.ics`, `.verified.xml`), so they are readable in reviews; a mismatch writes a `.received` file and fails with a line diff in the test output. New or changed snapshots are approved locally with `SNAPSHOT_ACCEPT=1`, which is ignored on CI.
 
 ### 5.3 L2 Integration tests
@@ -174,7 +178,14 @@ Source: [diagrams/test-apple-replay.puml](diagrams/test-apple-replay.puml)
 | RP-06 | Delete | Reminders on macOS |
 | RP-07 | Drag between lists (MOVE) | Reminders on macOS |
 
-Recording uses mitmproxy as a TLS reverse proxy in front of the bridge (`mitmproxy --mode reverse:http://<bridge>:5232`), with the mitmproxy CA trusted on the test device, and exports the flows. Sanitising removes `Authorization` headers and host names and normalises client-generated UIDs and tags. A capture middleware was rejected to keep test-only code out of production.
+Recording uses mitmproxy as a TLS reverse proxy in front of the bridge (`mitmdump --mode reverse:http://<bridge>:5232 -w <file>`), with the mitmproxy CA trusted on the test device. Sanitising removes `Authorization` headers and host names and normalises client-generated UIDs and tags. A capture middleware was rejected to keep test-only code out of production.
+
+Implementation (phase 2):
+
+- Sessions are JSON files under `tests/fixtures/sessions/<client>/<scenario>.json` (format in the folder's README). `SessionReplayTests` replays each through the harness against the reference data and checks the recorded status of every request, the expected Donetick calls, and a snapshot of the full response transcript.
+- `tests/fixtures/sessions/tools/capture_to_session.py` converts and sanitises a mitmproxy flow file. mitmproxy's HAR export turned out to drop the bodies of PROPFIND and REPORT requests, so the converter reads flow files and refuses incomplete HAR files.
+- The toolchain was proven end to end with the Python `caldav` client through mitmproxy against the published bridge; that session is kept as `python-caldav/toolchain-check`.
+- No Apple device was available while building this, so RP-01 to RP-07 exist as synthetic sessions (`apple-reminders-macos-synthetic/`), written from Apple's known request patterns and marked `"source": "synthetic"`. Recording real sessions follows [testing/apple-recording.md](testing/apple-recording.md); a recording replaces the synthetic file for its scenario.
 
 ### 5.5 L4 Container end-to-end
 L4 runs the image built from the `Dockerfile` in a Compose network with a Donetick stub and a test runner, so it covers what L2 cannot: the image itself, configuration through environment variables, TLS with a mounted certificate, and an independent CalDAV client.
@@ -243,7 +254,7 @@ A short checklist, run before each release on macOS and once on iOS: [testing/ap
 - **Chore matrix:** `TestChoreFactory` grows into a builder plus a named matrix of scenarios, shared by L1, L1b and L2, all on the fixed base date it already uses.
 - **Donetick fixtures:** sanitised payloads recorded from a real Donetick, stored under `tests/fixtures/donetick/`, used by U-01, WireMock mappings and CT-01.
 - **WireMock mappings:** JSON files under `tests/fixtures/donetick/mappings/`, loaded by L2 and mounted into the L4 stub container.
-- **Apple recordings:** under `tests/fixtures/apple/<client>/<scenario>/`, sanitised.
+- **Client sessions:** under `tests/fixtures/sessions/<client>/<scenario>.json`, sanitised; recorded Apple sessions and, until those exist, synthetic ones.
 - **No personal data:** fixtures never contain real chore names, labels or credentials from the production Donetick.
 
 ## 7 Test doubles
@@ -255,7 +266,7 @@ A short checklist, run before each release on macOS and once on iOS: [testing/ap
 | WireMock.Net server | Donetick over HTTP | L2, L3 | Fault injection, request verification, scenarios for stateful sequences |
 | WireMock.Net container | Donetick over HTTP | L4 | Same mapping files as L2 |
 | `FakeTimeProvider` | Clock and delays | L1, L2, L3 | From Microsoft.Extensions.TimeProvider.Testing |
-| Recorded Apple sessions | Apple clients | L3 | |
+| Recorded client sessions | Apple clients | L3 | Synthetic until recorded on a device |
 | Real Donetick container | nothing | L5 | Pinned version |
 
 ## 8 Project structure and conventions
@@ -266,13 +277,15 @@ tests/
   Directory.Build.props               shared settings of the test projects (target framework, nullable)
   Directory.Packages.props            central package versions for all test projects
   DonetickCalDav.Tests/               L1 unit and L1b snapshot tests (existing project)
-    Snapshots/                        approved snapshot files
-  DonetickCalDav.IntegrationTests/    L2 and L3: WebApplicationFactory, WireMock.Net
-  DonetickCalDav.Testing/             shared test helpers: snapshot helper, chore matrix
-    Harness/                          host factory, CalDAV test client, assertions
+    */Snapshots/                      approved snapshot files, next to the test class
+  DonetickCalDav.IntegrationTests/    L2, L3 and HTTP snapshots: WebApplicationFactory, WireMock.Net
+  DonetickCalDav.Testing/             shared test helpers: test data, chore matrix, fake clock
+    Harness/                          host factory, Donetick stub, CalDAV test client, replay model
+    Snapshots/                        snapshot helper and scrubbers
+  coverage/                           coverage settings, report and gate script, baseline
   fixtures/
     donetick/                         recorded payloads and WireMock mappings
-    apple/                            recorded Apple sessions
+    sessions/                         client sessions for replay, and the capture converter
   e2e/
     docker-compose.e2e.yml            profiles: stub, contract
     test_*.py                         L4 and L5 scenarios
@@ -354,7 +367,7 @@ With the `Covers` trait in place, this table can be generated from the test asse
 |-------|--------------|-----------|--------|
 | 0 Foundations | Specified in appendix A: xUnit v3 migration, Microsoft.Testing.Platform, central package versions, test seams, integration project skeleton | Unit tests green on v3; harness boots the app against WireMock in one passing test | Done 2026-10-18 |
 | 1 Integration | IT-01 to IT-16; WireMock mapping files; coverage report | All scenarios green; hand-written line coverage at least 80 % | Done 2026-10-18; 91.5 % |
-| 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green | Open |
+| 2 Wire format | Snapshot helper (P2-01); SN-01 to SN-05; first Apple recordings and RP-01 to RP-07 | Snapshots approved; replay green | Done 2026-10-18, with synthetic RP sessions until recordings exist |
 | 3 CI | GitHub Actions workflow with the gates from chapter 10; vulnerability and image scans | Pipeline required for merges to `main` | Open |
 | 4 Containers | L4 Compose setup with stub profile; E2E-01 to E2E-11; then L5 contract profile with automated provisioning | Nightly job green; contract checks documented | Open |
 | 5 Extras | U-01 to U-04, mutation testing, optional load and ZAP scans, synthetic PROPFIND check | Baselines recorded | Open |
@@ -469,7 +482,7 @@ Spikes run on 2026-10-17 in a scratch copy of the repository, with .NET SDK 10.0
 | Can WireMock templating echo request fields, including optional ones? | Yes, with `{{#if request.bodyAsJson.dueDate.Value}}`; testing the JSON value itself is always false, and `JsonPath.SelectToken` fails on a missing field | Probe mappings on the `dotnet-wiremock` 2.19.0 tool |
 
 ## Appendix C Snapshot helper prototype
-The prototype used to decide on the in-house helper (chapter 13). It was tested on xunit.v3 4.0.2 with Microsoft.Testing.Platform and is the starting point for task P2-01; it is not yet in the repository.
+The prototype used to decide on the in-house helper (chapter 13). It was tested on xunit.v3 4.0.2 with Microsoft.Testing.Platform and was the starting point for task P2-01. The repository version (`tests/DonetickCalDav.Testing/Snapshots/Snapshot.cs`) adds a testable core, an ellipsis between distant changes in the diff, and scrubbers in a separate class.
 
 Usage:
 

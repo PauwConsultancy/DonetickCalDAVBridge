@@ -1,0 +1,70 @@
+{
+  "id": "RP-05",
+  "title": "Complete a recurring task (the double PUT)",
+  "source": "synthetic",
+  "client": "Reminders, macOS 26 (reconstructed request patterns)",
+  "recorded": null,
+  "notes": "Synthetic: written by hand from the request patterns Apple Reminders is known to use (methods, depths, property sets, the double PUT on completion). Not captured from a device. Replace with a recorded session (docs/testing/apple-recording.md) and keep this file until the recording covers the same scenario.",
+  "bridge": {
+    "groupByLabel": false
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/caldav/calendars/{user}/tasks/C0FFEE00-1234-4567-89AB-CDEF01234567.ics",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Content-Type": "text/calendar",
+          "If-None-Match": "*"
+        },
+        "authenticated": true,
+        "body": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Apple Inc.//macOS 26.0//EN\r\nCALSCALE:GREGORIAN\r\nBEGIN:VTODO\r\nCREATED:20250615T080000Z\r\nDTSTAMP:20250615T080500Z\r\nLAST-MODIFIED:20250615T080500Z\r\nSEQUENCE:1\r\nUID:C0FFEE00-1234-4567-89AB-CDEF01234567\r\nSUMMARY:Water the plants\r\nCOMPLETED:20250615T081000Z\r\nPERCENT-COMPLETE:100\r\nDUE:20250616T060000Z\r\nSTATUS:COMPLETED\r\nX-APPLE-SORT-ORDER:772356000\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/caldav/calendars/{user}/tasks/donetick-101.ics",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Content-Type": "text/calendar"
+        },
+        "authenticated": true,
+        "body": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Apple Inc.//macOS 26.0//EN\r\nCALSCALE:GREGORIAN\r\nBEGIN:VTODO\r\nCREATED:20250615T080000Z\r\nDTSTAMP:20250615T080500Z\r\nLAST-MODIFIED:20250615T080500Z\r\nSEQUENCE:1\r\nUID:donetick-101@donetick\r\nSUMMARY:Water the plants\r\nCOMPLETED:20250615T081000Z\r\nPERCENT-COMPLETE:100\r\nDUE:20250616T060000Z\r\nSTATUS:COMPLETED\r\nX-APPLE-SORT-ORDER:772356000\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/caldav/calendars/{user}/tasks/donetick-101.ics",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0"
+        },
+        "authenticated": true,
+        "body": null
+      },
+      "response": {
+        "status": 200
+      }
+    }
+  ],
+  "expectDonetick": [
+    {
+      "method": "POST",
+      "path": "/eapi/v1/chore/101/complete",
+      "count": 1
+    },
+    {
+      "method": "POST",
+      "path": "/eapi/v1/chore",
+      "count": 0
+    }
+  ]
+}

@@ -28,6 +28,10 @@ desktop.ini
 out/
 artifacts/
 
+## Raw traffic captures (contain credentials; convert with tests/fixtures/sessions/tools)
+*.flows
+*.har
+
 ## Python (tests/e2e)
 __pycache__/
 .pytest_cache/

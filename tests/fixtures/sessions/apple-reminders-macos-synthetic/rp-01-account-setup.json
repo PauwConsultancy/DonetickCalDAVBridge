@@ -1,0 +1,108 @@
+{
+  "id": "RP-01",
+  "title": "Account setup (discovery)",
+  "source": "synthetic",
+  "client": "Reminders, macOS 26 (reconstructed request patterns)",
+  "recorded": null,
+  "notes": "Synthetic: written by hand from the request patterns Apple Reminders is known to use (methods, depths, property sets, the double PUT on completion). Not captured from a device. Replace with a recorded session (docs/testing/apple-recording.md) and keep this file until the recording covers the same scenario.",
+  "bridge": {
+    "groupByLabel": false
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/.well-known/caldav",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Depth": "0",
+          "Content-Type": "text/xml"
+        },
+        "authenticated": false,
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<A:propfind xmlns:A=\"DAV:\">\n  <A:prop>\n    <A:current-user-principal/>\n    <A:principal-URL/>\n    <A:resourcetype/>\n  </A:prop>\n</A:propfind>\n"
+      },
+      "response": {
+        "status": 301
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Depth": "0",
+          "Content-Type": "text/xml"
+        },
+        "authenticated": false,
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<A:propfind xmlns:A=\"DAV:\">\n  <A:prop>\n    <A:current-user-principal/>\n    <A:principal-URL/>\n    <A:resourcetype/>\n  </A:prop>\n</A:propfind>\n"
+      },
+      "response": {
+        "status": 401
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Depth": "0",
+          "Content-Type": "text/xml"
+        },
+        "authenticated": true,
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<A:propfind xmlns:A=\"DAV:\">\n  <A:prop>\n    <A:current-user-principal/>\n    <A:principal-URL/>\n    <A:resourcetype/>\n  </A:prop>\n</A:propfind>\n"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "OPTIONS",
+        "path": "/caldav/principals/{user}/",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0"
+        },
+        "authenticated": true,
+        "body": null
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/principals/{user}/",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Depth": "0",
+          "Content-Type": "text/xml"
+        },
+        "authenticated": true,
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<A:propfind xmlns:A=\"DAV:\" xmlns:B=\"urn:ietf:params:xml:ns:caldav\" xmlns:C=\"http://calendarserver.org/ns/\">\n  <A:prop>\n    <B:calendar-home-set/>\n    <B:calendar-user-address-set/>\n    <A:current-user-principal/>\n    <A:displayname/>\n    <C:dropbox-home-URL/>\n    <C:email-address-set/>\n    <C:notification-URL/>\n    <A:principal-collection-set/>\n    <A:principal-URL/>\n    <A:resource-id/>\n    <B:schedule-inbox-URL/>\n    <B:schedule-outbox-URL/>\n    <A:supported-report-set/>\n  </A:prop>\n</A:propfind>\n"
+      },
+      "response": {
+        "status": 207
+      }
+    },
+    {
+      "request": {
+        "method": "PROPFIND",
+        "path": "/caldav/calendars/{user}/",
+        "headers": {
+          "User-Agent": "Mac+OS+X/26.0 (25A354) remindd/1.0",
+          "Depth": "1",
+          "Content-Type": "text/xml"
+        },
+        "authenticated": true,
+        "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<A:propfind xmlns:A=\"DAV:\" xmlns:B=\"urn:ietf:params:xml:ns:caldav\" xmlns:C=\"http://calendarserver.org/ns/\" xmlns:D=\"http://apple.com/ns/ical/\">\n  <A:prop>\n    <A:add-member/>\n    <C:allowed-sharing-modes/>\n    <B:calendar-alarm/>\n    <D:calendar-color/>\n    <B:calendar-description/>\n    <B:calendar-free-busy-set/>\n    <D:calendar-order/>\n    <B:calendar-timezone/>\n    <A:current-user-privilege-set/>\n    <B:default-alarm-vevent-date/>\n    <A:displayname/>\n    <C:getctag/>\n    <C:invite/>\n    <A:owner/>\n    <C:pushkey/>\n    <A:quota-available-bytes/>\n    <A:quota-used-bytes/>\n    <D:refreshrate/>\n    <A:resource-id/>\n    <A:resourcetype/>\n    <B:schedule-calendar-transp/>\n    <C:source/>\n    <B:supported-calendar-component-set/>\n    <A:supported-report-set/>\n    <A:sync-token/>\n  </A:prop>\n</A:propfind>\n"
+      },
+      "response": {
+        "status": 207
+      }
+    }
+  ],
+  "expectDonetick": []
+}

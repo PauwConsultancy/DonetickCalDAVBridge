@@ -1,0 +1,17 @@
+HTTP 200
+Content-Type: application/json; charset=utf-8
+
+{
+  "status": "healthy",
+  "version": "{version}",
+  "uptime_seconds": 0,
+  "cache": {
+    "total_chores": 6,
+    "active": 6,
+    "with_due_date": 5
+  },
+  "donetick": {
+    "base_url": "http://localhost:{port}",
+    "poll_interval_seconds": 30
+  }
+}

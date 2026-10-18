@@ -1,5 +1,5 @@
 # Donetick CalDAV Bridge - Findings
-Review of version 0.7.1, based on the reverse engineering for the [functional design](functional-design.md) and [technical design](technical-design.md) on 2026-10-17, extended on 2026-10-18 with what the new integration tests and a real Donetick v0.1.82 revealed (F-23 to F-28). Those documents describe the bridge as it is; this document evaluates it: defects, risks, improvement proposals and project documentation that no longer matches the code.
+Review of version 0.7.1, based on the reverse engineering for the [functional design](functional-design.md) and [technical design](technical-design.md) on 2026-10-17, extended on 2026-10-18 with what the new integration tests and a real Donetick v0.1.82 revealed (F-23 to F-29). Those documents describe the bridge as it is; this document evaluates it: defects, risks, improvement proposals and project documentation that no longer matches the code.
 
 ## Summary
 The design fits its stated scope (one user, a few devices, private network), and the riskiest logic, the VTODO mapping, is well covered by unit tests. The issues worth addressing first, in order of impact:
@@ -14,7 +14,7 @@ The design fits its stated scope (one user, a few devices, private network), and
 Eight places in the existing project documentation and code comments no longer match the code (chapter 4).
 
 ## 1 Scope and method
-F-01 to F-22 come from reading the code, tests, Dockerfile, templates and project notes. F-23 to F-28 were found while building the test pipeline: by the in-process integration tests, by running the published application, and by calling a real Donetick v0.1.82 (testing strategy, 5.6). Nothing was verified with an Apple client. Findings that depend on unverified Donetick behaviour are marked **Assumption**.
+F-01 to F-22 come from reading the code, tests, Dockerfile, templates and project notes. F-23 to F-29 were found while building the test pipeline: by the in-process integration tests, by running the published application, and by calling a real Donetick v0.1.82 (testing strategy, 5.6). Nothing was verified with an Apple client. Findings that depend on unverified Donetick behaviour are marked **Assumption**.
 
 Open findings that can be reproduced automatically have a characterization test: a test that asserts today's behaviour and carries the trait `KnownIssue` with the finding's ID. `dotnet test --project tests/DonetickCalDav.IntegrationTests --filter-trait "KnownIssue=F-01"` runs the tests for one finding. When a finding is fixed, its test fails; it is then inverted into a regression test and the trait removed.
 
@@ -52,6 +52,7 @@ When a finding is resolved, remove its row and mention the fix in `CHANGELOG.md`
 | F-24 | Low | Donetick writes `updatedAt` with the server's UTC offset (for example `+02:00`). System.Text.Json turns it into a local `DateTime`, and `new CalDateTime(value, "UTC")` labels that local wall time as UTC, so `DTSTAMP` and `LAST-MODIFIED` are off by the offset when the bridge does not run in UTC. The Docker image runs in UTC, so the default deployment is not affected. | Deserialize timestamps as `DateTimeOffset`, or convert with `ToUniversalTime()` before building `CalDateTime` values. |
 | F-25 | Low | DELETE of a chore that Donetick no longer knows returns 502, because Donetick answers 404 and any non-success status becomes an `HttpRequestException`. A client that retries a delete after a lost response sees an error. | Treat a Donetick 404 on DELETE as success (204), or answer 404. |
 | F-28 | Low | A PUT without `Content-Length` (chunked) larger than 1 MB fails with 500 instead of 413: `StreamReader.Peek()` reads synchronously, which Kestrel forbids. Confirmed against the published application. | Read one more character with `ReadAsync` instead of calling `Peek()`. |
+| F-29 | Low | Backslashes in chore names and descriptions are not escaped in the ICS output (RFC 5545 requires `\\`). A name such as `C:\temp` is invalid ICS, and a name containing `\n` turns into a line break in the client. Ical.Net behaves this way in both 4.3.1 and 5.2.3, so it is not a regression of the upgrade. Pinned by the SN-01 snapshot `special-characters`. | Escape backslashes before handing text to Ical.Net, and add a round-trip unit test. |
 | F-15 | Info | The UID map grows by one entry per created task for the lifetime of the process. | Acceptable; optionally prune entries older than a day. |
 | F-16 | Info | Two full loads run back to back at startup (startup check, then the first loop iteration). | Delay the first loop iteration by one interval. |
 | F-17 | Info | `ClientTracker.TotalRequests` sums only retained clients, so pruned clients disappear from the total. | Keep a separate counter. |

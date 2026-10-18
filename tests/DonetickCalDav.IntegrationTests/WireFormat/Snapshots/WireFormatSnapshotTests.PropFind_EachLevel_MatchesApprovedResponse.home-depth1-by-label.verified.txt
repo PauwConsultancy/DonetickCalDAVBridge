@@ -1,0 +1,245 @@
+HTTP 207
+Content-Type: application/xml; charset=utf-8
+DAV: 1, 3, access-control, calendar-access
+
+<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:apple="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/caldav/calendars/tester/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:displayname>tester Calendars</d:displayname>
+        <d:resourcetype>
+          <d:collection />
+        </d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <apple:calendar-color />
+        <cal:calendar-description />
+        <cal:calendar-free-busy-set />
+        <apple:calendar-order />
+        <cal:calendar-timezone />
+        <d:current-user-privilege-set />
+        <cal:default-alarm-vevent-date />
+        <cs:getctag />
+        <cs:invite />
+        <d:owner />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+        <cal:supported-calendar-component-set />
+        <d:supported-report-set />
+        <d:sync-token />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/tasks/</d:href>
+    <d:propstat>
+      <d:prop>
+        <apple:calendar-color>#4A90D9FF</apple:calendar-color>
+        <cal:calendar-description>Tasks from Donetick</cal:calendar-description>
+        <apple:calendar-order>1</apple:calendar-order>
+        <d:current-user-privilege-set>
+          <d:privilege>
+            <d:read />
+          </d:privilege>
+          <d:privilege>
+            <d:write />
+          </d:privilege>
+          <d:privilege>
+            <d:read-current-user-privilege-set />
+          </d:privilege>
+        </d:current-user-privilege-set>
+        <d:displayname>General</d:displayname>
+        <cs:getctag>"3933F46584EBE822"</cs:getctag>
+        <d:owner>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:owner>
+        <d:resourcetype>
+          <d:collection />
+          <cal:calendar />
+        </d:resourcetype>
+        <cal:supported-calendar-component-set>
+          <cal:comp name="VTODO" />
+        </cal:supported-calendar-component-set>
+        <d:supported-report-set>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-query />
+            </d:report>
+          </d:supported-report>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-multiget />
+            </d:report>
+          </d:supported-report>
+        </d:supported-report-set>
+        <d:sync-token>http://donetick-caldav/sync/"3933F46584EBE822"</d:sync-token>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <cal:calendar-free-busy-set />
+        <cal:calendar-timezone />
+        <cal:default-alarm-vevent-date />
+        <cs:invite />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/finance/</d:href>
+    <d:propstat>
+      <d:prop>
+        <apple:calendar-color>#C0C539FF</apple:calendar-color>
+        <cal:calendar-description>Tasks from Donetick</cal:calendar-description>
+        <apple:calendar-order>2</apple:calendar-order>
+        <d:current-user-privilege-set>
+          <d:privilege>
+            <d:read />
+          </d:privilege>
+          <d:privilege>
+            <d:write />
+          </d:privilege>
+          <d:privilege>
+            <d:read-current-user-privilege-set />
+          </d:privilege>
+        </d:current-user-privilege-set>
+        <d:displayname>Finance</d:displayname>
+        <cs:getctag>"EFE36C483D19579B"</cs:getctag>
+        <d:owner>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:owner>
+        <d:resourcetype>
+          <d:collection />
+          <cal:calendar />
+        </d:resourcetype>
+        <cal:supported-calendar-component-set>
+          <cal:comp name="VTODO" />
+        </cal:supported-calendar-component-set>
+        <d:supported-report-set>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-query />
+            </d:report>
+          </d:supported-report>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-multiget />
+            </d:report>
+          </d:supported-report>
+        </d:supported-report-set>
+        <d:sync-token>http://donetick-caldav/sync/"EFE36C483D19579B"</d:sync-token>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <cal:calendar-free-busy-set />
+        <cal:calendar-timezone />
+        <cal:default-alarm-vevent-date />
+        <cs:invite />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/caldav/calendars/tester/home/</d:href>
+    <d:propstat>
+      <d:prop>
+        <apple:calendar-color>#39C5C0FF</apple:calendar-color>
+        <cal:calendar-description>Tasks from Donetick</cal:calendar-description>
+        <apple:calendar-order>3</apple:calendar-order>
+        <d:current-user-privilege-set>
+          <d:privilege>
+            <d:read />
+          </d:privilege>
+          <d:privilege>
+            <d:write />
+          </d:privilege>
+          <d:privilege>
+            <d:read-current-user-privilege-set />
+          </d:privilege>
+        </d:current-user-privilege-set>
+        <d:displayname>Home</d:displayname>
+        <cs:getctag>"B57D3CAC7AF5D052"</cs:getctag>
+        <d:owner>
+          <d:href>/caldav/principals/tester/</d:href>
+        </d:owner>
+        <d:resourcetype>
+          <d:collection />
+          <cal:calendar />
+        </d:resourcetype>
+        <cal:supported-calendar-component-set>
+          <cal:comp name="VTODO" />
+        </cal:supported-calendar-component-set>
+        <d:supported-report-set>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-query />
+            </d:report>
+          </d:supported-report>
+          <d:supported-report>
+            <d:report>
+              <cal:calendar-multiget />
+            </d:report>
+          </d:supported-report>
+        </d:supported-report-set>
+        <d:sync-token>http://donetick-caldav/sync/"B57D3CAC7AF5D052"</d:sync-token>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop>
+        <d:add-member />
+        <cs:allowed-sharing-modes />
+        <cal:calendar-alarm />
+        <cal:calendar-free-busy-set />
+        <cal:calendar-timezone />
+        <cal:default-alarm-vevent-date />
+        <cs:invite />
+        <cs:pushkey />
+        <d:quota-available-bytes />
+        <d:quota-used-bytes />
+        <apple:refreshrate />
+        <d:resource-id />
+        <cal:schedule-calendar-transp />
+        <cs:source />
+      </d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
